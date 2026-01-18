@@ -5,6 +5,7 @@
 # ----------------------------------------------------------------------------
 global:
   name: sonarr
+  namespace: media-center
   chart:
     appVersion: 4.0.16.2944
   labels:
