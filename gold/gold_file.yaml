@@ -1,0 +1,1615 @@
+---
+# Source: sonarr/charts/app-chart/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sonarr-default
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "network-policy"
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: sonarr
+      app.kubernetes.io/name: sonarr
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: shared-platform-gateway
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: prometheus
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: homeassistant
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: home-assistant
+      ports:
+      - port: 15008
+        protocol: TCP
+  egress:
+    - ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+      to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+    - ports:
+      - port: 15008
+        protocol: TCP
+      to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: download-clients
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+    - ports:
+      - port: 443
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 0.0.0.0/0
+          except:
+          - 10.42.0.0/16
+          - 10.43.0.0/16
+          - 192.168.0.0/16
+---
+# Source: sonarr/charts/app-chart/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sonarr
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "serviceaccount"
+  annotations:
+    description: Sonarr media center service account
+automountServiceAccountToken: false
+---
+# Source: sonarr/templates/grafana.tpl
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarr-app
+  namespace: default
+  labels:
+    app.kubernetes.io/component: grafana-dashboard
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    grafana_dashboard: "1"
+    helm.sh/chart: sonarr-0.1.0
+data:
+  app: "{\n  \"annotations\": {\n    \"list\": [\n      {\n        \"builtIn\": 1,\n
+    \       \"datasource\": {\n          \"type\": \"grafana\",\n          \"uid\":
+    \"-- Grafana --\"\n        },\n        \"enable\": true,\n        \"hide\": true,\n
+    \       \"iconColor\": \"rgba(0, 211, 255, 1)\",\n        \"name\": \"Annotations
+    & Alerts\",\n        \"type\": \"dashboard\"\n      }\n    ]\n  },\n  \"editable\":
+    true,\n  \"fiscalYearStartMonth\": 0,\n  \"graphTooltip\": 0,\n  \"id\": 171,\n
+    \ \"links\": [],\n  \"liveNow\": false,\n  \"panels\": [\n    {\n      \"collapsed\":
+    false,\n      \"gridPos\": {\n        \"h\": 1,\n        \"w\": 24,\n        \"x\":
+    0,\n        \"y\": 0\n      },\n      \"id\": 1000,\n      \"panels\": [],\n      \"title\":
+    \"\U0001F4CA Application Metrics\",\n      \"type\": \"row\"\n    },\n    {\n      \"datasource\":
+    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"thresholds\"\n          },\n          \"mappings\": [\n            {\n              \"options\":
+    {\n                \"0\": {\n                  \"color\": \"red\",\n                  \"text\":
+    \"Unhealthy\"\n                },\n                \"1\": {\n                  \"color\":
+    \"green\",\n                  \"text\": \"Healthy\"\n                }\n              },\n
+    \             \"type\": \"value\"\n            }\n          ],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"red\",\n                \"value\": null\n              },\n
+    \             {\n                \"color\": \"green\",\n                \"value\":
+    1\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    4,\n        \"w\": 6,\n        \"x\": 0,\n        \"y\": 1\n      },\n      \"id\":
+    1,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
+    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
+    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
+    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
+    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
+    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sonarr_system_status{service=\\\"sonarr\\\", component=\\\"media-center\\\"} *
+    on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"System
+    Status\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
+    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
+    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"green\",\n                \"value\": null\n              },\n              {\n
+    \               \"color\": \"yellow\",\n                \"value\": 10\n              },\n
+    \             {\n                \"color\": \"red\",\n                \"value\":
+    50\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    4,\n        \"w\": 6,\n        \"x\": 6,\n        \"y\": 1\n      },\n      \"id\":
+    2,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
+    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
+    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
+    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
+    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
+    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}
+    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Backlog
+    Size\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
+    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
+    \         },\n          \"mappings\": [\n            {\n              \"options\":
+    {\n                \"match\": \"null\",\n                \"result\": {\n                  \"text\":
+    \"N/A\"\n                }\n              },\n              \"type\": \"special\"\n
+    \           },\n            {\n              \"options\": {\n                \"from\":
+    -999999999999,\n                \"result\": {\n                  \"color\": \"green\",\n
+    \                 \"text\": \"Draining\"\n                },\n                \"to\":
+    0\n              },\n              \"type\": \"range\"\n            },\n            {\n
+    \             \"options\": {\n                \"from\": 0,\n                \"result\":
+    {\n                  \"color\": \"red\",\n                  \"text\": \"Growing\"\n
+    \               },\n                \"to\": 999999999999\n              },\n              \"type\":
+    \"range\"\n            }\n          ],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"green\",\n                \"value\": null\n              },\n              {\n
+    \               \"color\": \"red\",\n                \"value\": 0\n              }\n
+    \           ]\n          },\n          \"unit\": \"short\"\n        },\n        \"overrides\":
+    []\n      },\n      \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\":
+    12,\n        \"y\": 1\n      },\n      \"id\": 3,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"delta(sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\",
+    component=\\\"media-center\\\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Backlog
+    Delta (24h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n
+    \       \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              }\n
+    \           ]\n          },\n          \"unit\": \"episodes/hour\"\n        },\n
+    \       \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\": 4,\n        \"w\":
+    6,\n        \"x\": 18,\n        \"y\": 1\n      },\n      \"id\": 4,\n      \"options\":
+    {\n        \"colorMode\": \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\":
+    \"auto\",\n        \"orientation\": \"auto\",\n        \"percentChangeColorMode\":
+    \"standard\",\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"sum(increase(sonarr_episode_downloaded_total{service=\\\"sonarr\\\",
+    component=\\\"media-center\\\"}[1h])) * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Import/Download
+    Rate (1h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"collapsed\": true,\n
+    \     \"gridPos\": {\n        \"h\": 1,\n        \"w\": 24,\n        \"x\": 0,\n
+    \       \"y\": 5\n      },\n      \"id\": 2000,\n      \"panels\": [],\n      \"title\":
+    \"\U0001F4C8 Progress & Capacity\",\n      \"type\": \"row\"\n    },\n    {\n      \"datasource\":
+    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisBorderShow\":
+    false,\n            \"axisCenteredZero\": false,\n            \"axisColorMode\":
+    \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n
+    \           \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\":
+    10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\":
+    false,\n              \"tooltip\": false,\n              \"viz\": false\n            },\n
+    \           \"insertNulls\": false,\n            \"lineInterpolation\": \"linear\",\n
+    \           \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
+    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
+    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
+    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
+    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
+    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
+    [\n              {\n                \"color\": \"green\",\n                \"value\":
+    null\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 6\n      },\n      \"id\":
+    2001,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
+    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
+    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
+    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
+    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_missing_total{service=\\\"sonarr\\\",
+    component=\\\"media-center\\\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"legendFormat\": \"Missing Episodes\",\n          \"refId\":
+    \"A\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}
+    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"legendFormat\": \"Cutoff Unmet\",\n          \"refId\":
+    \"B\"\n        }\n      ],\n      \"title\": \"Backlog Over Time\",\n      \"type\":
+    \"timeseries\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
+    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
+    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
+    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
+    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
+    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
+    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
+    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
+    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
+    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
+    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
+    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
+    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
+    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              }\n
+    \           ]\n          },\n          \"unit\": \"short\"\n        },\n        \"overrides\":
+    []\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\":
+    12,\n        \"y\": 6\n      },\n      \"id\": 2002,\n      \"options\": {\n        \"legend\":
+    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
+    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
+    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
+    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
+    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sonarr_episode_downloaded_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}
+    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"legendFormat\": \"Downloaded\",\n          \"refId\": \"A\"\n
+    \       },\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_missing_total{service=\\\"sonarr\\\",
+    component=\\\"media-center\\\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"legendFormat\": \"Missing\",\n          \"refId\": \"B\"\n
+    \       },\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_total{service=\\\"sonarr\\\",
+    component=\\\"media-center\\\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"legendFormat\": \"Total\",\n          \"refId\": \"C\"\n
+    \       }\n      ],\n      \"title\": \"Episode Flow Over Time\",\n      \"type\":
+    \"timeseries\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
+    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
+    \         \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"red\",\n                \"value\": null\n              },\n              {\n                \"color\":
+    \"green\",\n                \"value\": 1\n              }\n            ]\n          },\n
+    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
+    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 0,\n
+    \       \"y\": 14\n      },\n      \"id\": 117,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"sum(increase(sonarr_episode_downloaded_total{service=\\\"sonarr\\\",component=\\\"media-center\\\"}[7d]))\",\n
+    \         \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Downloaded Episodes
+    (7d)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
+    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
+    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"red\",\n                \"value\": null\n              },\n              {\n                \"color\":
+    \"green\",\n                \"value\": 1\n              }\n            ]\n          },\n
+    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
+    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 6,\n
+    \       \"y\": 14\n      },\n      \"id\": 118,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"sum(increase(sonarr_episode_downloaded_total{service=\\\"sonarr\\\",component=\\\"media-center\\\"}[30d]))\",\n
+    \         \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Downloaded Episodes
+    (30d)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
+    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
+    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"red\",\n                \"value\": null\n              },\n              {\n                \"color\":
+    \"green\",\n                \"value\": 1\n              }\n            ]\n          },\n
+    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
+    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 12,\n
+    \       \"y\": 14\n      },\n      \"id\": 119,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"delta(sonarr_episode_missing_total{service=\\\"sonarr\\\",
+    component=\\\"media-center\\\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Missing
+    Episodes Δ (24h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\":
+    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"red\",\n                \"value\": null\n              },\n
+    \             {\n                \"color\": \"green\",\n                \"value\":
+    1\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    4,\n        \"w\": 6,\n        \"x\": 18,\n        \"y\": 14\n      },\n      \"id\":
+    120,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
+    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
+    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
+    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
+    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
+    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"delta(sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}[24h])
+    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
+    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Cutoff
+    Unmet Δ (24h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\":
+    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              },\n
+    \             {\n                \"color\": \"yellow\",\n                \"value\":
+    50\n              },\n              {\n                \"color\": \"red\",\n                \"value\":
+    100\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    4,\n        \"w\": 6,\n        \"x\": 0,\n        \"y\": 18\n      },\n      \"id\":
+    113,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
+    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
+    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
+    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
+    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
+    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sonarr_history_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}\",\n
+    \         \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"History Items\",\n
+    \     \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
+    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
+    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"green\",\n                \"value\": null\n              }\n            ]\n          },\n
+    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
+    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 6,\n
+    \       \"y\": 18\n      },\n      \"id\": 28,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_downloaded_total{service=\\\"sonarr\\\",
+    component=\\\"media-center\\\"}\",\n          \"refId\": \"A\"\n        }\n      ],\n
+    \     \"title\": \"Downloaded Episodes\",\n      \"type\": \"stat\"\n    },\n    {\n
+    \     \"collapsed\": false,\n      \"gridPos\": {\n        \"h\": 1,\n        \"w\":
+    24,\n        \"x\": 0,\n        \"y\": 22\n      },\n      \"id\": 3000,\n      \"panels\":
+    [],\n      \"title\": \"\U0001F4BB Resource Usage\",\n      \"type\": \"row\"\n
+    \   },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
+    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
+    {\n            \"mode\": \"thresholds\"\n          },\n          \"mappings\": [],\n
+    \         \"max\": 100,\n          \"min\": 0,\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"green\",\n                \"value\": null\n              },\n              {\n
+    \               \"color\": \"yellow\",\n                \"value\": 70\n              },\n
+    \             {\n                \"color\": \"red\",\n                \"value\":
+    85\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    8,\n        \"w\": 8,\n        \"x\": 0,\n        \"y\": 23\n      },\n      \"id\":
+    3001,\n      \"options\": {\n        \"displayMode\": \"gradient\",\n        \"minVizHeight\":
+    10,\n        \"minVizWidth\": 0,\n        \"orientation\": \"auto\",\n        \"reduceOptions\":
+    {\n          \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showThresholdLabels\":
+    false,\n        \"showThresholdMarkers\": true,\n        \"sizing\": \"auto\",\n
+    \       \"text\": {}\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_cpu_usage_seconds_total{namespace=\\\"$namespace\\\",
+    container=\\\"sonarr\\\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\\\"cpu\\\",
+    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100\",\n          \"refId\":
+    \"A\"\n        }\n      ],\n      \"title\": \"CPU Usage\",\n      \"type\": \"gauge\"\n
+    \   },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
+    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
+    {\n            \"mode\": \"thresholds\"\n          },\n          \"mappings\": [],\n
+    \         \"max\": 100,\n          \"min\": 0,\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"green\",\n                \"value\": null\n              },\n              {\n
+    \               \"color\": \"yellow\",\n                \"value\": 70\n              },\n
+    \             {\n                \"color\": \"red\",\n                \"value\":
+    85\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    8,\n        \"w\": 8,\n        \"x\": 8,\n        \"y\": 23\n      },\n      \"id\":
+    3002,\n      \"options\": {\n        \"displayMode\": \"gradient\",\n        \"minVizHeight\":
+    10,\n        \"minVizWidth\": 0,\n        \"orientation\": \"auto\",\n        \"reduceOptions\":
+    {\n          \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showThresholdLabels\":
+    false,\n        \"showThresholdMarkers\": true,\n        \"sizing\": \"auto\",\n
+    \       \"text\": {}\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(container_memory_working_set_bytes{namespace=\\\"$namespace\\\",
+    container=\\\"sonarr\\\"}) / sum(kube_pod_container_resource_limits{resource=\\\"memory\\\",
+    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100\",\n          \"refId\":
+    \"A\"\n        }\n      ],\n      \"title\": \"Memory Usage\",\n      \"type\":
+    \"gauge\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
+    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
+    \         \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"green\",\n                \"value\": null\n              },\n              {\n
+    \               \"color\": \"yellow\",\n                \"value\": 0.1\n              },\n
+    \             {\n                \"color\": \"red\",\n                \"value\":
+    0.5\n              }\n            ]\n          },\n          \"unit\": \"s\"\n        },\n
+    \       \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\":
+    8,\n        \"x\": 16,\n        \"y\": 23\n      },\n      \"id\": 3003,\n      \"options\":
+    {\n        \"colorMode\": \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\":
+    \"auto\",\n        \"orientation\": \"auto\",\n        \"percentChangeColorMode\":
+    \"standard\",\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_cpu_cfs_throttled_seconds_total{namespace=\\\"$namespace\\\",
+    container=\\\"sonarr\\\"}[5m]))\",\n          \"refId\": \"A\"\n        }\n      ],\n
+    \     \"title\": \"CPU Throttling Rate\",\n      \"type\": \"stat\"\n    },\n    {\n
+    \     \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n
+    \     },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
+    {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\":
+    {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\": false,\n
+    \           \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\":
+    \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n
+    \           \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\":
+    {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"viz\":
+    false\n            },\n            \"insertNulls\": false,\n            \"lineInterpolation\":
+    \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
+    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
+    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
+    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
+    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
+    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
+    [\n              {\n                \"color\": \"green\",\n                \"value\":
+    null\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 31\n      },\n      \"id\":
+    3004,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
+    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
+    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
+    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
+    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_cpu_usage_seconds_total{namespace=\\\"$namespace\\\",
+    container=\\\"sonarr\\\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\\\"cpu\\\",
+    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100\",\n          \"legendFormat\":
+    \"CPU Usage %\",\n          \"refId\": \"A\"\n        },\n        {\n          \"datasource\":
+    {\n            \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n
+    \         },\n          \"expr\": \"max((kube_pod_container_resource_requests{resource=\\\"cpu\\\",
+    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"} / kube_pod_container_resource_limits{resource=\\\"cpu\\\",
+    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100) by (namespace, container)\",\n
+    \         \"legendFormat\": \"CPU Request\",\n          \"refId\": \"B\"\n        },\n
+    \       {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"100\",\n
+    \         \"legendFormat\": \"CPU Limit\",\n          \"refId\": \"C\"\n        }\n
+    \     ],\n      \"title\": \"CPU Usage Over Time\",\n      \"type\": \"timeseries\"\n
+    \   },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
+    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
+    {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\":
+    {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\": false,\n
+    \           \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\":
+    \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n
+    \           \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\":
+    {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"viz\":
+    false\n            },\n            \"insertNulls\": false,\n            \"lineInterpolation\":
+    \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
+    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
+    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
+    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
+    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
+    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
+    [\n              {\n                \"color\": \"green\",\n                \"value\":
+    null\n              }\n            ]\n          },\n          \"unit\": \"bytes\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 31\n      },\n      \"id\":
+    3005,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
+    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
+    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
+    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
+    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(container_memory_working_set_bytes{namespace=\\\"$namespace\\\",
+    container=\\\"sonarr\\\"})\",\n          \"legendFormat\": \"Memory Used\",\n          \"refId\":
+    \"A\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sum(kube_pod_container_resource_limits{resource=\\\"memory\\\", namespace=\\\"$namespace\\\",
+    container=\\\"sonarr\\\"})\",\n          \"legendFormat\": \"Memory Limit\",\n          \"refId\":
+    \"B\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sum(kube_pod_container_resource_requests{resource=\\\"memory\\\", namespace=\\\"$namespace\\\",
+    container=\\\"sonarr\\\"})\",\n          \"legendFormat\": \"Memory Request\",\n
+    \         \"refId\": \"C\"\n        }\n      ],\n      \"title\": \"Memory Usage
+    Over Time\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
+    {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"max\": 100,\n
+    \         \"min\": 0,\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n
+    \           \"steps\": [\n              {\n                \"color\": \"green\",\n
+    \               \"value\": null\n              },\n              {\n                \"color\":
+    \"yellow\",\n                \"value\": 70\n              },\n              {\n
+    \               \"color\": \"red\",\n                \"value\": 80\n              }\n
+    \           ]\n          },\n          \"unit\": \"percent\"\n        },\n        \"overrides\":
+    []\n      },\n      \"gridPos\": {\n        \"h\": 4,\n        \"w\": 8,\n        \"x\":
+    0,\n        \"y\": 39\n      },\n      \"id\": 3006,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"editorMode\": \"code\",\n          \"exemplar\":
+    false,\n          \"expr\": \"(kubelet_volume_stats_available_bytes{namespace=\\\"$namespace\\\",
+    persistentvolumeclaim=~\\\".*sonarr.*\\\"} / kubelet_volume_stats_capacity_bytes{namespace=\\\"$namespace\\\",
+    persistentvolumeclaim=~\\\".*sonarr.*\\\"}) * 100\",\n          \"interval\": \"\",\n
+    \         \"legendFormat\": \"__auto\",\n          \"range\": true,\n          \"refId\":
+    \"A\"\n        }\n      ],\n      \"title\": \"PVC Available %\",\n      \"type\":
+    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
+    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
+    \         \"mappings\": [],\n          \"max\": 100,\n          \"min\": 0,\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              },\n
+    \             {\n                \"color\": \"yellow\",\n                \"value\":
+    70\n              },\n              {\n                \"color\": \"red\",\n                \"value\":
+    80\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    4,\n        \"w\": 8,\n        \"x\": 8,\n        \"y\": 39\n      },\n      \"id\":
+    3007,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
+    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
+    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
+    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
+    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
+    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"(kubelet_volume_stats_inodes_used{namespace=\\\"$namespace\\\", persistentvolumeclaim=~\\\".*sonarr.*\\\"}
+    / kubelet_volume_stats_inodes{namespace=\\\"$namespace\\\", persistentvolumeclaim=~\\\".*sonarr.*\\\"})
+    * 100\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"PVC
+    Inode Usage %\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\":
+    {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n
+    \     \"description\": \"Alerts: SabnzbdPVCHighUsage\",\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
+    \         },\n          \"mappings\": [],\n          \"max\": 100,\n          \"min\":
+    0,\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
+    [\n              {\n                \"color\": \"green\",\n                \"value\":
+    null\n              },\n              {\n                \"color\": \"yellow\",\n
+    \               \"value\": 70\n              },\n              {\n                \"color\":
+    \"red\",\n                \"value\": 80\n              }\n            ]\n          },\n
+    \         \"unit\": \"percent\"\n        },\n        \"overrides\": []\n      },\n
+    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 8,\n        \"x\": 16,\n
+    \       \"y\": 39\n      },\n      \"id\": 3012,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"editorMode\": \"code\",\n          \"expr\":
+    \"(kubelet_volume_stats_used_bytes{persistentvolumeclaim=\\\"sonarr-config\\\",
+    namespace=\\\"$namespace\\\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=\\\"sonarr-config\\\",
+    namespace=\\\"$namespace\\\"}) * 100\",\n          \"range\": true,\n          \"refId\":
+    \"A\"\n        }\n      ],\n      \"title\": \"Config PVC Usage\",\n      \"type\":
+    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"type\": \"prometheus\",\n
+    \       \"uid\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
+    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
+    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
+    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
+    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
+    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
+    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
+    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
+    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
+    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
+    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
+    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
+    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              }\n
+    \           ]\n          },\n          \"unit\": \"Bps\"\n        },\n        \"overrides\":
+    []\n      },\n      \"gridPos\": {\n        \"h\": 6,\n        \"w\": 24,\n        \"x\":
+    0,\n        \"y\": 43\n      },\n      \"id\": 3008,\n      \"options\": {\n        \"legend\":
+    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
+    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
+    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
+    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
+    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sum(rate(container_fs_reads_bytes_total{pod=~\\\"$pod_regex\\\", namespace=\\\"$namespace\\\"}[5m]))\",\n
+    \         \"legendFormat\": \"Read IO\",\n          \"refId\": \"A\"\n        },\n
+    \       {\n          \"datasource\": {\n            \"type\": \"prometheus\",\n
+    \           \"uid\": \"prometheus\"\n          },\n          \"editorMode\": \"code\",\n
+    \         \"expr\": \"sum(rate(container_fs_writes_bytes_total{pod=~\\\"$pod_regex\\\",
+    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"hide\": false,\n          \"instant\":
+    false,\n          \"legendFormat\": \"Write IO\",\n          \"range\": true,\n
+    \         \"refId\": \"B\"\n        }\n      ],\n      \"title\": \"Filesystem Read
+    / Write IO\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
+    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisBorderShow\":
+    false,\n            \"axisCenteredZero\": false,\n            \"axisColorMode\":
+    \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n
+    \           \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\":
+    10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\":
+    false,\n              \"tooltip\": false,\n              \"viz\": false\n            },\n
+    \           \"insertNulls\": false,\n            \"lineInterpolation\": \"linear\",\n
+    \           \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
+    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
+    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
+    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
+    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
+    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
+    [\n              {\n                \"color\": \"green\",\n                \"value\":
+    null\n              }\n            ]\n          },\n          \"unit\": \"ms\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    6,\n        \"w\": 24,\n        \"x\": 0,\n        \"y\": 49\n      },\n      \"id\":
+    3009,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
+    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
+    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
+    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
+    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"histogram_quantile(0.95,
+    sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name=\\\"sonarr\\\",
+    destination_service_namespace=\\\"$namespace\\\"}[5m])) by (le))\",\n          \"legendFormat\":
+    \"p95 Response Time\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\":
+    \"Response Time (p95)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
+    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              }\n
+    \           ]\n          },\n          \"unit\": \"reqps\"\n        },\n        \"overrides\":
+    []\n      },\n      \"gridPos\": {\n        \"h\": 5,\n        \"w\": 6,\n        \"x\":
+    0,\n        \"y\": 55\n      },\n      \"id\": 3010,\n      \"options\": {\n        \"colorMode\":
+    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
+    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
+    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
+    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
+    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
+    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
+    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
+    \"prometheus\"\n          },\n          \"expr\": \"sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
+    destination_service_namespace=\\\"$namespace\\\"}[5m]))\",\n          \"refId\":
+    \"A\"\n        }\n      ],\n      \"title\": \"Request Rate\",\n      \"type\":
+    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"type\": \"prometheus\",\n
+    \       \"uid\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
+    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
+    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
+    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
+    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
+    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
+    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
+    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
+    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
+    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
+    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
+    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
+    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              }\n
+    \           ]\n          },\n          \"unit\": \"reqps\"\n        },\n        \"overrides\":
+    []\n      },\n      \"gridPos\": {\n        \"h\": 5,\n        \"w\": 18,\n        \"x\":
+    6,\n        \"y\": 55\n      },\n      \"id\": 3013,\n      \"options\": {\n        \"legend\":
+    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
+    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
+    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
+    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
+    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"editorMode\":
+    \"code\",\n          \"expr\": \"sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
+    destination_service_namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\":
+    \"Request Rate (req/s)\",\n          \"range\": true,\n          \"refId\": \"A\"\n
+    \       }\n      ],\n      \"title\": \"Request Rate Over Time\",\n      \"type\":
+    \"timeseries\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
+    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
+    \         \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
+    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
+    \"green\",\n                \"value\": null\n              },\n              {\n
+    \               \"color\": \"yellow\",\n                \"value\": 0.1\n              },\n
+    \             {\n                \"color\": \"red\",\n                \"value\":
+    1\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    5,\n        \"w\": 6,\n        \"x\": 0,\n        \"y\": 60\n      },\n      \"id\":
+    3011,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
+    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
+    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
+    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
+    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
+    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
+    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"(sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\", destination_service_namespace=\\\"$namespace\\\",
+    response_code=~\\\"5..\\\"}[5m])) / sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
+    destination_service_namespace=\\\"$namespace\\\"}[5m]))) * 100\",\n          \"refId\":
+    \"A\"\n        }\n      ],\n      \"title\": \"Error Rate (%)\",\n      \"type\":
+    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"type\": \"prometheus\",\n
+    \       \"uid\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
+    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
+    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
+    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
+    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
+    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
+    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
+    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
+    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
+    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
+    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
+    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
+    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
+    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
+    \               \"color\": \"green\",\n                \"value\": null\n              }\n
+    \           ]\n          },\n          \"unit\": \"percent\"\n        },\n        \"overrides\":
+    []\n      },\n      \"gridPos\": {\n        \"h\": 5,\n        \"w\": 18,\n        \"x\":
+    6,\n        \"y\": 60\n      },\n      \"id\": 3014,\n      \"options\": {\n        \"legend\":
+    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
+    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
+    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
+    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
+    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"editorMode\":
+    \"code\",\n          \"expr\": \"(sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
+    destination_service_namespace=\\\"$namespace\\\", response_code=~\\\"5..\\\"}[5m]))
+    / sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\", destination_service_namespace=\\\"$namespace\\\"}[5m])))
+    * 100\",\n          \"legendFormat\": \"Error Rate (%)\",\n          \"range\":
+    true,\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Error
+    Rate Over Time\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
+    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
+    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
+    \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisBorderShow\":
+    false,\n            \"axisCenteredZero\": false,\n            \"axisColorMode\":
+    \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n
+    \           \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\":
+    10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\":
+    false,\n              \"tooltip\": false,\n              \"viz\": false\n            },\n
+    \           \"insertNulls\": false,\n            \"lineInterpolation\": \"linear\",\n
+    \           \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
+    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
+    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
+    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
+    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
+    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
+    [\n              {\n                \"color\": \"green\",\n                \"value\":
+    null\n              }\n            ]\n          },\n          \"unit\": \"Bps\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 65\n      },\n      \"id\":
+    3015,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
+    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
+    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
+    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
+    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_network_receive_bytes_total{pod=~\\\"$pod_regex\\\",
+    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"rx\",\n          \"refId\":
+    \"A\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
+    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
+    \"sum(rate(container_network_transmit_bytes_total{pod=~\\\"$pod_regex\\\", namespace=\\\"$namespace\\\"}[5m]))\",\n
+    \         \"legendFormat\": \"tx\",\n          \"refId\": \"B\"\n        }\n      ],\n
+    \     \"title\": \"Network Throughput\",\n      \"type\": \"timeseries\"\n    },\n
+    \   {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
+    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
+    {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\":
+    {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\": false,\n
+    \           \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\":
+    \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n
+    \           \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\":
+    {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"viz\":
+    false\n            },\n            \"insertNulls\": false,\n            \"lineInterpolation\":
+    \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
+    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
+    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
+    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
+    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
+    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
+    [\n              {\n                \"color\": \"green\",\n                \"value\":
+    null\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
+    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
+    8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 65\n      },\n      \"id\":
+    3016,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
+    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
+    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
+    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
+    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
+    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
+    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_network_receive_errors_total{pod=~\\\"$pod_regex\\\",
+    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"rx_err\",\n
+    \         \"refId\": \"A\"\n        },\n        {\n          \"datasource\": {\n
+    \           \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n
+    \         \"expr\": \"sum(rate(container_network_transmit_errors_total{pod=~\\\"$pod_regex\\\",
+    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"tx_err\",\n
+    \         \"refId\": \"B\"\n        },\n        {\n          \"datasource\": {\n
+    \           \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n
+    \         \"expr\": \"sum(rate(container_network_receive_packets_dropped_total{pod=~\\\"$pod_regex\\\",
+    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"rx_drop\",\n
+    \         \"refId\": \"C\"\n        },\n        {\n          \"datasource\": {\n
+    \           \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n
+    \         \"expr\": \"sum(rate(container_network_transmit_packets_dropped_total{pod=~\\\"$pod_regex\\\",
+    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"tx_drop\",\n
+    \         \"refId\": \"D\"\n        }\n      ],\n      \"title\": \"Network Errors
+    / Drops\",\n      \"type\": \"timeseries\"\n    }\n  ],\n  \"refresh\": \"30s\",\n
+    \ \"schemaVersion\": 39,\n  \"tags\": [\n    \"sonarr\",\n    \"media-center\",\n
+    \   \"monitoring\",\n    \"exportarr\",\n    \"media-center\",\n    \"sonarr\"\n
+    \ ],\n  \"templating\": {\n    \"list\": [\n      {\n        \"hide\": 2,\n        \"name\":
+    \"namespace\",\n        \"query\": \"media-center\",\n        \"skipUrlSync\": false,\n
+    \       \"type\": \"constant\"\n      },\n      {\n        \"hide\": 2,\n        \"name\":
+    \"pod_regex\",\n        \"query\": \"sonarr-.*\",\n        \"skipUrlSync\": false,\n
+    \       \"type\": \"constant\"\n      },\n      {\n        \"hide\": 0,\n        \"label\":
+    \"Service\",\n        \"name\": \"service\",\n        \"query\": \"sonarr\",\n        \"queryValue\":
+    \"\",\n        \"skipUrlSync\": false,\n        \"type\": \"constant\"\n      },\n
+    \     {\n        \"hide\": 0,\n        \"label\": \"Component\",\n        \"name\":
+    \"component\",\n        \"query\": \"media-center\",\n        \"queryValue\": \"\",\n
+    \       \"skipUrlSync\": false,\n        \"type\": \"constant\"\n      }\n    ]\n
+    \ },\n  \"time\": {\n    \"from\": \"now-6h\",\n    \"to\": \"now\"\n  },\n  \"timepicker\":
+    {},\n  \"timezone\": \"\",\n  \"title\": \"Sonarr Dashboard\",\n  \"uid\": \"sonarr-media-center\",\n
+    \ \"version\": 2,\n  \"weekStart\": \"\"\n}"
+---
+# Source: sonarr/charts/app-chart/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarr-config
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "pvc"
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Source: sonarr/charts/app-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr-http
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: service-http
+  annotations:
+    description: Sonarr media center HTTP service
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+---
+# Source: sonarr/charts/app-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr-metrics
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: service-metrics
+  annotations:
+    description: Sonarr media center HTTP service
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+---
+# Source: sonarr/charts/app-chart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "deployment"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: sonarr
+      app.kubernetes.io/name: sonarr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: sonarr
+        app.kubernetes.io/name: sonarr
+        app.kubernetes.io/version: 4.0.16.2944
+        helm.sh/chart: app-chart-0.0.1
+        app.kubernetes.io/component: media-manager
+        app.kubernetes.io/part-of: media-center
+        logging.kubernetes.io/component: media-center
+        logging.kubernetes.io/service: sonarr
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 1011
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+        supplementalGroups:
+        - 1010
+        - 1003
+      serviceAccountName: sonarr
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: exportarr
+          image: ghcr.io/orhayoun/exportarr:v2.3.1@sha256:2650f6a501b1d691daf5dfe758068f44336d0bb1d443f9db2c94900244d423bc
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9100
+              protocol: TCP
+          args:
+            - sonarr
+          env:
+            - name: URL
+              value: http://localhost:8080
+            - name: CONFIG
+              value: /config/config.xml
+            - name: PORT
+              value: "9100"
+            - name: ENABLE_ADDITIONAL_METRICS
+              value: "false"
+            - name: ENABLE_UNKNOWN_QUEUE_ITEMS
+              value: "false"
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              readOnly: true
+          resources:
+            limits:
+              cpu: 100m
+              ephemeral-storage: 10Mi
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              ephemeral-storage: 10Mi
+              memory: 32Mi
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /metrics
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /metrics
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /metrics
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+        - name: sonarr
+          image: ghcr.io/runlix/sonarr:release-4.0.16.2944-latest@sha256:ec4ada4e4042f2226470c1875e503ee0137d589a3e3292d5d665a6e4276be8e2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: TZ
+              value: UTC
+            - name: SONARR__SERVER__PORT
+              value: "8080"
+            - name: SONARR__SERVER__BINDADDRESS
+              value: 0.0.0.0
+          volumeMounts:
+            - mountPath: /config
+              name: config
+            - mountPath: /media
+              name: media
+            - mountPath: /media-old
+              name: media-old
+            - mountPath: /downloads
+              name: downloads
+            - mountPath: /backup
+              name: backup
+            - mountPath: /tmp
+              name: tmp
+          resources:
+            limits:
+              cpu: 500m
+              ephemeral-storage: 2Gi
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              ephemeral-storage: 2Gi
+              memory: 256Mi
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /ping
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          lifecycle:
+            preStop:
+              enabled: true
+              exec:
+                command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "Shutting down gracefully..."
+          securityContext:
+            allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 1011
+            runAsNonRoot: true
+            runAsUser: 1012
+            seccompProfile:
+              type: RuntimeDefault
+      volumes:
+        -
+          name: config
+          persistentVolumeClaim:
+            claimName: sonarr-config
+        -
+          name: media
+          nfs:
+            path: /mnt/vol1/media-center/media/tv_shows
+            server: snorlax.orhayoun.com
+        -
+          name: media-old
+          nfs:
+            path: /mnt/vol1/Media/videos/TV_Shows
+            server: snorlax.orhayoun.com
+        -
+          name: downloads
+          nfs:
+            path: /mnt/vol1/media-center/downloads
+            server: snorlax.orhayoun.com
+        -
+          name: backup
+          nfs:
+            path: /mnt/vol1/media-center/backup/sonarr
+            server: snorlax.orhayoun.com
+        -
+          emptyDir:
+            sizeLimit: 1Gi
+          name: tmp
+---
+# Source: sonarr/charts/app-chart/templates/authorizationpolicy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: sonarr-homeassistant
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "authorization-policy"
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: sonarr
+      app.kubernetes.io/name: sonarr
+  action: ALLOW
+  rules:
+    - from:
+      - source:
+          principals:
+          - cluster.local/ns/homeassistant/sa/homeassistant-home-assistant
+      to:
+      - operation:
+          ports:
+          - "8080"
+---
+# Source: sonarr/charts/app-chart/templates/authorizationpolicy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: sonarr-ingress
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "authorization-policy"
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: sonarr
+      app.kubernetes.io/name: sonarr
+  action: ALLOW
+  rules:
+    - from:
+      - source:
+          principals:
+          - cluster.local/ns/istio-system/sa/shared-platform-gateway-istio
+      to:
+      - operation:
+          ports:
+          - "8080"
+---
+# Source: sonarr/charts/app-chart/templates/authorizationpolicy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: sonarr-prometheus
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "authorization-policy"
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: sonarr
+      app.kubernetes.io/name: sonarr
+  action: ALLOW
+  rules:
+    - from:
+      - source:
+          principals:
+          - cluster.local/ns/monitoring/sa/prometheus-kube-prometheus-prometheus
+      to:
+      - operation:
+          ports:
+          - "9100"
+---
+# Source: sonarr/charts/app-chart/templates/destinationrule.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: sonarr
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "destination-rule"
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  host: sonarr-http
+  trafficPolicy:
+    connectionPool:
+      http:
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+      tcp:
+        maxConnections: 100
+    outlierDetection:
+      baseEjectionTime: 30s
+      consecutive5xxErrors: 5
+      interval: 30s
+      maxEjectionPercent: 50
+---
+# Source: sonarr/charts/app-chart/templates/httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sonarr-route
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "http-route"
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  parentRefs:
+    - name: shared-platform-gateway
+      namespace: istio-system
+      kind: Gateway
+      group: gateway.networking.k8s.io
+      sectionName: https
+  hostnames:
+    - sonarr-k8s.orhayoun.com
+  rules:
+    -
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: sonarr-http
+          port: 8080
+          weight: 100
+---
+# Source: sonarr/charts/app-chart/templates/httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sonarr-http-redirect
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "http-route"
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  parentRefs:
+    - name: shared-platform-gateway
+      namespace: istio-system
+      kind: Gateway
+      group: gateway.networking.k8s.io
+      sectionName: http
+  hostnames:
+    - sonarr-k8s.orhayoun.com
+  rules:
+    -
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - requestRedirect:
+            scheme: https
+            statusCode: 301
+          type: RequestRedirect
+---
+# Source: sonarr/charts/app-chart/templates/prometheusrule.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sonarr
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "prometheus-rule"
+
+spec:
+  groups:
+    - name: sonarr.rules
+      rules:
+        - alert: SonarrDown
+          annotations:
+            description: Sonarr system status is 0 (unhealthy) for more than 5 minutes.
+            summary: Sonarr service is down
+          expr: sonarr_system_status{service="sonarr", component="media-center"} == 0
+          for: 5m
+          labels:
+            component: media-center
+            service: sonarr
+            severity: critical
+        - alert: SonarrCutoffUnmetHigh
+          annotations:
+            description: Sonarr has more than 100 cutoff-unmet episodes for more than 30 minutes
+              (upgrade backlog).
+            summary: Sonarr cutoff unmet backlog is high
+          expr: sonarr_episode_cutoff_unmet_total{service="sonarr", component="media-center"}
+            > 100
+          for: 30m
+          labels:
+            component: media-center
+            service: sonarr
+            severity: warning
+        - alert: SonarrMissingEpisodesHigh
+          annotations:
+            description: Sonarr has more than 50 missing episodes. This may indicate indexing
+              or download issues.
+            summary: Sonarr has many missing episodes
+          expr: sonarr_episode_missing_total{service="sonarr", component="media-center"} >
+            50
+          for: 1h
+          labels:
+            component: media-center
+            service: sonarr
+            severity: info
+        - alert: SonarrExportarrMetricsUnavailable
+          annotations:
+            description: Sonarr pod is running but Exportarr metrics are missing for more
+              than 5 minutes. Check Exportarr container logs in pod {{ $labels.pod }}.
+            summary: Sonarr Exportarr metrics endpoint unavailable
+          expr: kube_deployment_status_replicas_available{deployment="sonarr", namespace="media-center"}
+            > 0 and absent_over_time(sonarr_system_status{service="sonarr", component="media-center"}[5m])
+          for: 5m
+          labels:
+            component: media-center
+            service: sonarr
+            severity: warning
+            sidecar: exportarr
+        - alert: SonarrHealthIssuesPresent
+          annotations:
+            description: Sonarr is reporting one or more health issues for more than 15 minutes
+              (count={{ $value }}).
+            summary: Sonarr reports health issues
+          expr: sonarr_system_health_issues{service="sonarr", component="media-center"} >
+            0
+          for: 15m
+          labels:
+            component: media-center
+            service: sonarr
+            severity: warning
+        - alert: SonarrExporterScrapeSlow
+          annotations:
+            description: Sonarr Exportarr scrape duration exceeded 2s for more than 10 minutes
+              (max={{ $value }}s).
+            summary: Sonarr exporter scrape is slow
+          expr: max_over_time(sonarr_scrape_duration_seconds{service="sonarr", component="media-center"}[10m])
+            > 2
+          for: 10m
+          labels:
+            component: media-center
+            service: sonarr
+            severity: warning
+            sidecar: exportarr
+        - alert: SonarrExporterNotReady
+          annotations:
+            description: Exporter container in Sonarr pod {{ $labels.pod }} is not ready for
+              more than 2 minutes.
+            summary: Sonarr exporter sidecar is not ready
+          expr: |
+            kube_deployment_status_replicas_available{deployment="sonarr", namespace="media-center"} > 0
+            and
+            kube_pod_container_status_ready{container="exportarr", pod=~"sonarr-.*", namespace="media-center"} == 0
+          for: 2m
+          labels:
+            component: media-center
+            service: sonarr
+            severity: warning
+            sidecar: exportarr
+        - alert: SonarrExporterRestarting
+          annotations:
+            description: Exporter sidecar container in Sonarr pod {{ $labels.pod }} has restarted
+              more than 2 times in the last hour.
+            summary: Sonarr exporter sidecar restarting frequently
+          expr: increase(kube_pod_container_status_restarts_total{namespace="media-center",
+            pod=~"sonarr-.*", container="exportarr"}[1h]) > 2
+          for: 0m
+          labels:
+            component: media-center
+            service: sonarr
+            severity: warning
+            sidecar: exportarr
+        - alert: SonarrHighCPUUtilization
+          annotations:
+            description: Sonarr CPU usage is above 80% of requested CPU for more than 10 minutes
+              (value={{ $value }}%).
+            summary: Sonarr CPU utilization is high
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="media-center", pod=~"sonarr-.*", container="sonarr"}[5m]))
+              /
+              sum(kube_pod_container_resource_requests{namespace="media-center", pod=~"sonarr-.*", container="sonarr", resource="cpu"})
+            ) * 100 > 80
+          for: 10m
+          labels:
+            component: media-center
+            resource: cpu
+            service: sonarr
+            severity: warning
+        - alert: SonarrHighMemoryUtilization
+          annotations:
+            description: Sonarr memory working set is above 85% of memory limit for more than
+              10 minutes (value={{ $value }}%).
+            summary: Sonarr memory utilization is high
+          expr: |
+            (
+              max(container_memory_working_set_bytes{namespace="media-center", pod=~"sonarr-.*", container="sonarr"})
+              /
+              max(kube_pod_container_resource_limits{namespace="media-center", pod=~"sonarr-.*", container="sonarr", resource="memory"})
+            ) * 100 > 85
+          for: 10m
+          labels:
+            component: media-center
+            resource: memory
+            service: sonarr
+            severity: warning
+        - alert: SonarrAuthorizationPolicyDenials
+          annotations:
+            description: Sonarr is experiencing authorization policy denials. {{ $value }}
+              requests/sec are being denied.
+            summary: Sonarr authorization policy denials detected
+          expr: sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center",
+            destination_service_name="sonarr", request_protocol="http", response_code="403",
+            response_flags="SEC"}[5m])) > 0
+          for: 2m
+          labels:
+            component: media-center
+            security: authorization
+            service: sonarr
+            severity: warning
+        - alert: SonarrHighAuthorizationDenialRate
+          annotations:
+            description: Sonarr has a high authorization denial rate ({{ $value }}% of requests
+              denied). This may indicate a misconfigured authorization policy.
+            summary: Sonarr high authorization denial rate
+          expr: |
+            (
+              sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center", destination_service_name="sonarr", request_protocol="http", response_code="403", response_flags="SEC"}[5m]))
+              /
+              sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center", destination_service_name="sonarr", request_protocol="http"}[5m]))
+            ) * 100 > 5
+          for: 5m
+          labels:
+            component: media-center
+            security: authorization
+            service: sonarr
+            severity: critical
+---
+# Source: sonarr/charts/app-chart/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sonarr
+  namespace: default
+  labels:
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: app-chart-0.0.1
+    app.kubernetes.io/component: "servicemonitor"
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: service-metrics
+      app.kubernetes.io/instance: sonarr
+      app.kubernetes.io/name: sonarr
+  namespaceSelector:
+    matchNames:
+    - media-center
+  endpoints:
+    - port: metrics
+      interval: 10s
+      scrapeTimeout: 5s
+      path: /metrics
+      honorLabels: true
+      relabelings:
+        - action: replace
+          sourceLabels:
+          - __meta_kubernetes_namespace
+          targetLabel: namespace
+        - action: replace
+          sourceLabels:
+          - __meta_kubernetes_pod_name
+          targetLabel: instance
+      metricRelabelings:
+        - action: replace
+          replacement: sonarr
+          targetLabel: service
+        - action: replace
+          replacement: media-center
+          targetLabel: component

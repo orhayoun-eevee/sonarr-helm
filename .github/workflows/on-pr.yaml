@@ -1,0 +1,19 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+jobs:
+  validate-gold:
+    uses: orhayoun-eevee/build-workflow/.github/workflows/on-pr-flow.yaml@main
+    with:
+      working_directory: gold
+      script_name: generate_gold.sh
+      chart_path: .
+    secrets: inherit  # Required for cross-repo workflows
