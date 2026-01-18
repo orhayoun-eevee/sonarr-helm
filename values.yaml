@@ -293,16 +293,6 @@ app-chart:
           - name: tmp
             mountPath: /tmp
 
-        # Lifecycle hooks
-        lifecycle:
-          preStop:
-            enabled: true
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  echo "Shutting down gracefully..."
         # Health Probes
         livenessProbe:
           httpGet:

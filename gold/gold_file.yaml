@@ -1141,15 +1141,6 @@ spec:
             periodSeconds: 5
             successThreshold: 1
             timeoutSeconds: 5
-          lifecycle:
-            preStop:
-              enabled: true
-              exec:
-                command:
-                - /bin/sh
-                - -c
-                - |
-                  echo "Shutting down gracefully..."
           securityContext:
             allowPrivilegeEscalation: false
             appArmorProfile:
