@@ -139,6 +139,19 @@ app-chart:
                   port: 53
                 - protocol: TCP
                   port: 53
+
+            # PostgreSQL database access
+            - posts:
+                - port: 5432
+                  protocol: TCP
+              to:
+                - namespaceSelector:
+                    matchLabels:
+                      kubernetes.io/metadata.name: postgresql
+                - namespaceSelector:
+                    matchLabels:
+                      kubernetes.io/metadata.name: databases
+
             - to:
                 - namespaceSelector:
                     matchLabels:
