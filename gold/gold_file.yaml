@@ -1,5 +1,5 @@
 ---
-# Source: sonarr/charts/app-chart/templates/networkpolicy.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "network-policy"
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -58,6 +58,16 @@ spec:
           matchLabels:
             k8s-app: kube-dns
     - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: postgresql
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: databases
+    - ports:
       - port: 15008
         protocol: TCP
       to:
@@ -78,7 +88,7 @@ spec:
           - 10.43.0.0/16
           - 192.168.0.0/16
 ---
-# Source: sonarr/charts/app-chart/templates/serviceaccount.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -88,798 +98,13 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "serviceaccount"
   annotations:
     description: Sonarr media center service account
 automountServiceAccountToken: false
 ---
-# Source: sonarr/templates/grafana.tpl
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonarr-app
-  namespace: media-center
-  labels:
-    app.kubernetes.io/component: grafana-dashboard
-    app.kubernetes.io/instance: sonarr
-    app.kubernetes.io/name: sonarr
-    app.kubernetes.io/version: 4.0.16.2944
-    grafana_dashboard: "1"
-    helm.sh/chart: sonarr-0.1.0
-data:
-  app: "{\n  \"annotations\": {\n    \"list\": [\n      {\n        \"builtIn\": 1,\n
-    \       \"datasource\": {\n          \"type\": \"grafana\",\n          \"uid\":
-    \"-- Grafana --\"\n        },\n        \"enable\": true,\n        \"hide\": true,\n
-    \       \"iconColor\": \"rgba(0, 211, 255, 1)\",\n        \"name\": \"Annotations
-    & Alerts\",\n        \"type\": \"dashboard\"\n      }\n    ]\n  },\n  \"editable\":
-    true,\n  \"fiscalYearStartMonth\": 0,\n  \"graphTooltip\": 0,\n  \"id\": 171,\n
-    \ \"links\": [],\n  \"liveNow\": false,\n  \"panels\": [\n    {\n      \"collapsed\":
-    false,\n      \"gridPos\": {\n        \"h\": 1,\n        \"w\": 24,\n        \"x\":
-    0,\n        \"y\": 0\n      },\n      \"id\": 1000,\n      \"panels\": [],\n      \"title\":
-    \"\U0001F4CA Application Metrics\",\n      \"type\": \"row\"\n    },\n    {\n      \"datasource\":
-    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"thresholds\"\n          },\n          \"mappings\": [\n            {\n              \"options\":
-    {\n                \"0\": {\n                  \"color\": \"red\",\n                  \"text\":
-    \"Unhealthy\"\n                },\n                \"1\": {\n                  \"color\":
-    \"green\",\n                  \"text\": \"Healthy\"\n                }\n              },\n
-    \             \"type\": \"value\"\n            }\n          ],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"red\",\n                \"value\": null\n              },\n
-    \             {\n                \"color\": \"green\",\n                \"value\":
-    1\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    4,\n        \"w\": 6,\n        \"x\": 0,\n        \"y\": 1\n      },\n      \"id\":
-    1,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
-    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
-    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
-    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
-    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
-    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sonarr_system_status{service=\\\"sonarr\\\", component=\\\"media-center\\\"} *
-    on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"System
-    Status\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
-    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
-    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
-    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"green\",\n                \"value\": null\n              },\n              {\n
-    \               \"color\": \"yellow\",\n                \"value\": 10\n              },\n
-    \             {\n                \"color\": \"red\",\n                \"value\":
-    50\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    4,\n        \"w\": 6,\n        \"x\": 6,\n        \"y\": 1\n      },\n      \"id\":
-    2,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
-    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
-    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
-    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
-    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
-    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}
-    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Backlog
-    Size\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
-    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
-    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
-    \         },\n          \"mappings\": [\n            {\n              \"options\":
-    {\n                \"match\": \"null\",\n                \"result\": {\n                  \"text\":
-    \"N/A\"\n                }\n              },\n              \"type\": \"special\"\n
-    \           },\n            {\n              \"options\": {\n                \"from\":
-    -999999999999,\n                \"result\": {\n                  \"color\": \"green\",\n
-    \                 \"text\": \"Draining\"\n                },\n                \"to\":
-    0\n              },\n              \"type\": \"range\"\n            },\n            {\n
-    \             \"options\": {\n                \"from\": 0,\n                \"result\":
-    {\n                  \"color\": \"red\",\n                  \"text\": \"Growing\"\n
-    \               },\n                \"to\": 999999999999\n              },\n              \"type\":
-    \"range\"\n            }\n          ],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"green\",\n                \"value\": null\n              },\n              {\n
-    \               \"color\": \"red\",\n                \"value\": 0\n              }\n
-    \           ]\n          },\n          \"unit\": \"short\"\n        },\n        \"overrides\":
-    []\n      },\n      \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\":
-    12,\n        \"y\": 1\n      },\n      \"id\": 3,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"delta(sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\",
-    component=\\\"media-center\\\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Backlog
-    Delta (24h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n
-    \       \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              }\n
-    \           ]\n          },\n          \"unit\": \"episodes/hour\"\n        },\n
-    \       \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\": 4,\n        \"w\":
-    6,\n        \"x\": 18,\n        \"y\": 1\n      },\n      \"id\": 4,\n      \"options\":
-    {\n        \"colorMode\": \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\":
-    \"auto\",\n        \"orientation\": \"auto\",\n        \"percentChangeColorMode\":
-    \"standard\",\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"sum(increase(sonarr_episode_downloaded_total{service=\\\"sonarr\\\",
-    component=\\\"media-center\\\"}[1h])) * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Import/Download
-    Rate (1h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"collapsed\": true,\n
-    \     \"gridPos\": {\n        \"h\": 1,\n        \"w\": 24,\n        \"x\": 0,\n
-    \       \"y\": 5\n      },\n      \"id\": 2000,\n      \"panels\": [],\n      \"title\":
-    \"\U0001F4C8 Progress & Capacity\",\n      \"type\": \"row\"\n    },\n    {\n      \"datasource\":
-    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisBorderShow\":
-    false,\n            \"axisCenteredZero\": false,\n            \"axisColorMode\":
-    \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n
-    \           \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\":
-    10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\":
-    false,\n              \"tooltip\": false,\n              \"viz\": false\n            },\n
-    \           \"insertNulls\": false,\n            \"lineInterpolation\": \"linear\",\n
-    \           \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
-    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
-    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
-    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
-    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
-    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
-    [\n              {\n                \"color\": \"green\",\n                \"value\":
-    null\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 6\n      },\n      \"id\":
-    2001,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
-    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
-    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
-    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
-    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_missing_total{service=\\\"sonarr\\\",
-    component=\\\"media-center\\\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"legendFormat\": \"Missing Episodes\",\n          \"refId\":
-    \"A\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}
-    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"legendFormat\": \"Cutoff Unmet\",\n          \"refId\":
-    \"B\"\n        }\n      ],\n      \"title\": \"Backlog Over Time\",\n      \"type\":
-    \"timeseries\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
-    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
-    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
-    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
-    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
-    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
-    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
-    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
-    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
-    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
-    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
-    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
-    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
-    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              }\n
-    \           ]\n          },\n          \"unit\": \"short\"\n        },\n        \"overrides\":
-    []\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\":
-    12,\n        \"y\": 6\n      },\n      \"id\": 2002,\n      \"options\": {\n        \"legend\":
-    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
-    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
-    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
-    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
-    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sonarr_episode_downloaded_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}
-    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"legendFormat\": \"Downloaded\",\n          \"refId\": \"A\"\n
-    \       },\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_missing_total{service=\\\"sonarr\\\",
-    component=\\\"media-center\\\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"legendFormat\": \"Missing\",\n          \"refId\": \"B\"\n
-    \       },\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_total{service=\\\"sonarr\\\",
-    component=\\\"media-center\\\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"legendFormat\": \"Total\",\n          \"refId\": \"C\"\n
-    \       }\n      ],\n      \"title\": \"Episode Flow Over Time\",\n      \"type\":
-    \"timeseries\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
-    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
-    \         \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"red\",\n                \"value\": null\n              },\n              {\n                \"color\":
-    \"green\",\n                \"value\": 1\n              }\n            ]\n          },\n
-    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
-    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 0,\n
-    \       \"y\": 14\n      },\n      \"id\": 117,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"sum(increase(sonarr_episode_downloaded_total{service=\\\"sonarr\\\",component=\\\"media-center\\\"}[7d]))\",\n
-    \         \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Downloaded Episodes
-    (7d)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
-    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
-    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
-    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"red\",\n                \"value\": null\n              },\n              {\n                \"color\":
-    \"green\",\n                \"value\": 1\n              }\n            ]\n          },\n
-    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
-    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 6,\n
-    \       \"y\": 14\n      },\n      \"id\": 118,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"sum(increase(sonarr_episode_downloaded_total{service=\\\"sonarr\\\",component=\\\"media-center\\\"}[30d]))\",\n
-    \         \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Downloaded Episodes
-    (30d)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
-    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
-    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
-    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"red\",\n                \"value\": null\n              },\n              {\n                \"color\":
-    \"green\",\n                \"value\": 1\n              }\n            ]\n          },\n
-    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
-    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 12,\n
-    \       \"y\": 14\n      },\n      \"id\": 119,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"delta(sonarr_episode_missing_total{service=\\\"sonarr\\\",
-    component=\\\"media-center\\\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Missing
-    Episodes Δ (24h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\":
-    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"red\",\n                \"value\": null\n              },\n
-    \             {\n                \"color\": \"green\",\n                \"value\":
-    1\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    4,\n        \"w\": 6,\n        \"x\": 18,\n        \"y\": 14\n      },\n      \"id\":
-    120,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
-    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
-    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
-    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
-    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
-    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"delta(sonarr_episode_cutoff_unmet_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}[24h])
-    * on(pod) group_left() (kube_pod_status_phase{namespace=\\\"$namespace\\\",pod=~\\\"$pod_regex\\\",phase=\\\"Running\\\"}
-    @ end())\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Cutoff
-    Unmet Δ (24h)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\":
-    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              },\n
-    \             {\n                \"color\": \"yellow\",\n                \"value\":
-    50\n              },\n              {\n                \"color\": \"red\",\n                \"value\":
-    100\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    4,\n        \"w\": 6,\n        \"x\": 0,\n        \"y\": 18\n      },\n      \"id\":
-    113,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
-    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
-    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
-    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
-    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
-    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sonarr_history_total{service=\\\"sonarr\\\", component=\\\"media-center\\\"}\",\n
-    \         \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"History Items\",\n
-    \     \"type\": \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\":
-    \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n      \"fieldConfig\":
-    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
-    \         },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"green\",\n                \"value\": null\n              }\n            ]\n          },\n
-    \         \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n
-    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 6,\n        \"x\": 6,\n
-    \       \"y\": 18\n      },\n      \"id\": 28,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"sonarr_episode_downloaded_total{service=\\\"sonarr\\\",
-    component=\\\"media-center\\\"}\",\n          \"refId\": \"A\"\n        }\n      ],\n
-    \     \"title\": \"Downloaded Episodes\",\n      \"type\": \"stat\"\n    },\n    {\n
-    \     \"collapsed\": false,\n      \"gridPos\": {\n        \"h\": 1,\n        \"w\":
-    24,\n        \"x\": 0,\n        \"y\": 22\n      },\n      \"id\": 3000,\n      \"panels\":
-    [],\n      \"title\": \"\U0001F4BB Resource Usage\",\n      \"type\": \"row\"\n
-    \   },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
-    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
-    {\n            \"mode\": \"thresholds\"\n          },\n          \"mappings\": [],\n
-    \         \"max\": 100,\n          \"min\": 0,\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"green\",\n                \"value\": null\n              },\n              {\n
-    \               \"color\": \"yellow\",\n                \"value\": 70\n              },\n
-    \             {\n                \"color\": \"red\",\n                \"value\":
-    85\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    8,\n        \"w\": 8,\n        \"x\": 0,\n        \"y\": 23\n      },\n      \"id\":
-    3001,\n      \"options\": {\n        \"displayMode\": \"gradient\",\n        \"minVizHeight\":
-    10,\n        \"minVizWidth\": 0,\n        \"orientation\": \"auto\",\n        \"reduceOptions\":
-    {\n          \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showThresholdLabels\":
-    false,\n        \"showThresholdMarkers\": true,\n        \"sizing\": \"auto\",\n
-    \       \"text\": {}\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_cpu_usage_seconds_total{namespace=\\\"$namespace\\\",
-    container=\\\"sonarr\\\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\\\"cpu\\\",
-    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100\",\n          \"refId\":
-    \"A\"\n        }\n      ],\n      \"title\": \"CPU Usage\",\n      \"type\": \"gauge\"\n
-    \   },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
-    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
-    {\n            \"mode\": \"thresholds\"\n          },\n          \"mappings\": [],\n
-    \         \"max\": 100,\n          \"min\": 0,\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"green\",\n                \"value\": null\n              },\n              {\n
-    \               \"color\": \"yellow\",\n                \"value\": 70\n              },\n
-    \             {\n                \"color\": \"red\",\n                \"value\":
-    85\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    8,\n        \"w\": 8,\n        \"x\": 8,\n        \"y\": 23\n      },\n      \"id\":
-    3002,\n      \"options\": {\n        \"displayMode\": \"gradient\",\n        \"minVizHeight\":
-    10,\n        \"minVizWidth\": 0,\n        \"orientation\": \"auto\",\n        \"reduceOptions\":
-    {\n          \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showThresholdLabels\":
-    false,\n        \"showThresholdMarkers\": true,\n        \"sizing\": \"auto\",\n
-    \       \"text\": {}\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(container_memory_working_set_bytes{namespace=\\\"$namespace\\\",
-    container=\\\"sonarr\\\"}) / sum(kube_pod_container_resource_limits{resource=\\\"memory\\\",
-    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100\",\n          \"refId\":
-    \"A\"\n        }\n      ],\n      \"title\": \"Memory Usage\",\n      \"type\":
-    \"gauge\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
-    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
-    \         \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"green\",\n                \"value\": null\n              },\n              {\n
-    \               \"color\": \"yellow\",\n                \"value\": 0.1\n              },\n
-    \             {\n                \"color\": \"red\",\n                \"value\":
-    0.5\n              }\n            ]\n          },\n          \"unit\": \"s\"\n        },\n
-    \       \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\":
-    8,\n        \"x\": 16,\n        \"y\": 23\n      },\n      \"id\": 3003,\n      \"options\":
-    {\n        \"colorMode\": \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\":
-    \"auto\",\n        \"orientation\": \"auto\",\n        \"percentChangeColorMode\":
-    \"standard\",\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_cpu_cfs_throttled_seconds_total{namespace=\\\"$namespace\\\",
-    container=\\\"sonarr\\\"}[5m]))\",\n          \"refId\": \"A\"\n        }\n      ],\n
-    \     \"title\": \"CPU Throttling Rate\",\n      \"type\": \"stat\"\n    },\n    {\n
-    \     \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n
-    \     },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
-    {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\":
-    {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\": false,\n
-    \           \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\":
-    \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n
-    \           \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\":
-    {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"viz\":
-    false\n            },\n            \"insertNulls\": false,\n            \"lineInterpolation\":
-    \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
-    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
-    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
-    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
-    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
-    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
-    [\n              {\n                \"color\": \"green\",\n                \"value\":
-    null\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 31\n      },\n      \"id\":
-    3004,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
-    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
-    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
-    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
-    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_cpu_usage_seconds_total{namespace=\\\"$namespace\\\",
-    container=\\\"sonarr\\\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\\\"cpu\\\",
-    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100\",\n          \"legendFormat\":
-    \"CPU Usage %\",\n          \"refId\": \"A\"\n        },\n        {\n          \"datasource\":
-    {\n            \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n
-    \         },\n          \"expr\": \"max((kube_pod_container_resource_requests{resource=\\\"cpu\\\",
-    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"} / kube_pod_container_resource_limits{resource=\\\"cpu\\\",
-    namespace=\\\"$namespace\\\", container=\\\"sonarr\\\"}) * 100) by (namespace, container)\",\n
-    \         \"legendFormat\": \"CPU Request\",\n          \"refId\": \"B\"\n        },\n
-    \       {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"100\",\n
-    \         \"legendFormat\": \"CPU Limit\",\n          \"refId\": \"C\"\n        }\n
-    \     ],\n      \"title\": \"CPU Usage Over Time\",\n      \"type\": \"timeseries\"\n
-    \   },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
-    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
-    {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\":
-    {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\": false,\n
-    \           \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\":
-    \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n
-    \           \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\":
-    {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"viz\":
-    false\n            },\n            \"insertNulls\": false,\n            \"lineInterpolation\":
-    \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
-    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
-    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
-    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
-    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
-    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
-    [\n              {\n                \"color\": \"green\",\n                \"value\":
-    null\n              }\n            ]\n          },\n          \"unit\": \"bytes\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 31\n      },\n      \"id\":
-    3005,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
-    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
-    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
-    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
-    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(container_memory_working_set_bytes{namespace=\\\"$namespace\\\",
-    container=\\\"sonarr\\\"})\",\n          \"legendFormat\": \"Memory Used\",\n          \"refId\":
-    \"A\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sum(kube_pod_container_resource_limits{resource=\\\"memory\\\", namespace=\\\"$namespace\\\",
-    container=\\\"sonarr\\\"})\",\n          \"legendFormat\": \"Memory Limit\",\n          \"refId\":
-    \"B\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sum(kube_pod_container_resource_requests{resource=\\\"memory\\\", namespace=\\\"$namespace\\\",
-    container=\\\"sonarr\\\"})\",\n          \"legendFormat\": \"Memory Request\",\n
-    \         \"refId\": \"C\"\n        }\n      ],\n      \"title\": \"Memory Usage
-    Over Time\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
-    {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"max\": 100,\n
-    \         \"min\": 0,\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n
-    \           \"steps\": [\n              {\n                \"color\": \"green\",\n
-    \               \"value\": null\n              },\n              {\n                \"color\":
-    \"yellow\",\n                \"value\": 70\n              },\n              {\n
-    \               \"color\": \"red\",\n                \"value\": 80\n              }\n
-    \           ]\n          },\n          \"unit\": \"percent\"\n        },\n        \"overrides\":
-    []\n      },\n      \"gridPos\": {\n        \"h\": 4,\n        \"w\": 8,\n        \"x\":
-    0,\n        \"y\": 39\n      },\n      \"id\": 3006,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"editorMode\": \"code\",\n          \"exemplar\":
-    false,\n          \"expr\": \"(kubelet_volume_stats_available_bytes{namespace=\\\"$namespace\\\",
-    persistentvolumeclaim=~\\\".*sonarr.*\\\"} / kubelet_volume_stats_capacity_bytes{namespace=\\\"$namespace\\\",
-    persistentvolumeclaim=~\\\".*sonarr.*\\\"}) * 100\",\n          \"interval\": \"\",\n
-    \         \"legendFormat\": \"__auto\",\n          \"range\": true,\n          \"refId\":
-    \"A\"\n        }\n      ],\n      \"title\": \"PVC Available %\",\n      \"type\":
-    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
-    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
-    \         \"mappings\": [],\n          \"max\": 100,\n          \"min\": 0,\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              },\n
-    \             {\n                \"color\": \"yellow\",\n                \"value\":
-    70\n              },\n              {\n                \"color\": \"red\",\n                \"value\":
-    80\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    4,\n        \"w\": 8,\n        \"x\": 8,\n        \"y\": 39\n      },\n      \"id\":
-    3007,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
-    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
-    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
-    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
-    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
-    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"(kubelet_volume_stats_inodes_used{namespace=\\\"$namespace\\\", persistentvolumeclaim=~\\\".*sonarr.*\\\"}
-    / kubelet_volume_stats_inodes{namespace=\\\"$namespace\\\", persistentvolumeclaim=~\\\".*sonarr.*\\\"})
-    * 100\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"PVC
-    Inode Usage %\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\":
-    {\n        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n
-    \     \"description\": \"Alerts: SabnzbdPVCHighUsage\",\n      \"fieldConfig\":
-    {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n
-    \         },\n          \"mappings\": [],\n          \"max\": 100,\n          \"min\":
-    0,\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
-    [\n              {\n                \"color\": \"green\",\n                \"value\":
-    null\n              },\n              {\n                \"color\": \"yellow\",\n
-    \               \"value\": 70\n              },\n              {\n                \"color\":
-    \"red\",\n                \"value\": 80\n              }\n            ]\n          },\n
-    \         \"unit\": \"percent\"\n        },\n        \"overrides\": []\n      },\n
-    \     \"gridPos\": {\n        \"h\": 4,\n        \"w\": 8,\n        \"x\": 16,\n
-    \       \"y\": 39\n      },\n      \"id\": 3012,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"editorMode\": \"code\",\n          \"expr\":
-    \"(kubelet_volume_stats_used_bytes{persistentvolumeclaim=\\\"sonarr-config\\\",
-    namespace=\\\"$namespace\\\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=\\\"sonarr-config\\\",
-    namespace=\\\"$namespace\\\"}) * 100\",\n          \"range\": true,\n          \"refId\":
-    \"A\"\n        }\n      ],\n      \"title\": \"Config PVC Usage\",\n      \"type\":
-    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"type\": \"prometheus\",\n
-    \       \"uid\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
-    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
-    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
-    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
-    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
-    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
-    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
-    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
-    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
-    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
-    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
-    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
-    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              }\n
-    \           ]\n          },\n          \"unit\": \"Bps\"\n        },\n        \"overrides\":
-    []\n      },\n      \"gridPos\": {\n        \"h\": 6,\n        \"w\": 24,\n        \"x\":
-    0,\n        \"y\": 43\n      },\n      \"id\": 3008,\n      \"options\": {\n        \"legend\":
-    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
-    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
-    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
-    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
-    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sum(rate(container_fs_reads_bytes_total{pod=~\\\"$pod_regex\\\", namespace=\\\"$namespace\\\"}[5m]))\",\n
-    \         \"legendFormat\": \"Read IO\",\n          \"refId\": \"A\"\n        },\n
-    \       {\n          \"datasource\": {\n            \"type\": \"prometheus\",\n
-    \           \"uid\": \"prometheus\"\n          },\n          \"editorMode\": \"code\",\n
-    \         \"expr\": \"sum(rate(container_fs_writes_bytes_total{pod=~\\\"$pod_regex\\\",
-    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"hide\": false,\n          \"instant\":
-    false,\n          \"legendFormat\": \"Write IO\",\n          \"range\": true,\n
-    \         \"refId\": \"B\"\n        }\n      ],\n      \"title\": \"Filesystem Read
-    / Write IO\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
-    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisBorderShow\":
-    false,\n            \"axisCenteredZero\": false,\n            \"axisColorMode\":
-    \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n
-    \           \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\":
-    10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\":
-    false,\n              \"tooltip\": false,\n              \"viz\": false\n            },\n
-    \           \"insertNulls\": false,\n            \"lineInterpolation\": \"linear\",\n
-    \           \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
-    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
-    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
-    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
-    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
-    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
-    [\n              {\n                \"color\": \"green\",\n                \"value\":
-    null\n              }\n            ]\n          },\n          \"unit\": \"ms\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    6,\n        \"w\": 24,\n        \"x\": 0,\n        \"y\": 49\n      },\n      \"id\":
-    3009,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
-    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
-    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
-    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
-    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"histogram_quantile(0.95,
-    sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name=\\\"sonarr\\\",
-    destination_service_namespace=\\\"$namespace\\\"}[5m])) by (le))\",\n          \"legendFormat\":
-    \"p95 Response Time\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\":
-    \"Response Time (p95)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
-    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"thresholds\"\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              }\n
-    \           ]\n          },\n          \"unit\": \"reqps\"\n        },\n        \"overrides\":
-    []\n      },\n      \"gridPos\": {\n        \"h\": 5,\n        \"w\": 6,\n        \"x\":
-    0,\n        \"y\": 55\n      },\n      \"id\": 3010,\n      \"options\": {\n        \"colorMode\":
-    \"value\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n
-    \       \"orientation\": \"auto\",\n        \"percentChangeColorMode\": \"standard\",\n
-    \       \"reduceOptions\": {\n          \"calcs\": [\n            \"lastNotNull\"\n
-    \         ],\n          \"fields\": \"\",\n          \"values\": false\n        },\n
-    \       \"showPercentChange\": false,\n        \"textMode\": \"auto\",\n        \"wideLayout\":
-    true\n      },\n      \"pluginVersion\": \"11.1.3\",\n      \"targets\": [\n        {\n
-    \         \"datasource\": {\n            \"name\": \"Prometheus\",\n            \"type\":
-    \"prometheus\"\n          },\n          \"expr\": \"sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
-    destination_service_namespace=\\\"$namespace\\\"}[5m]))\",\n          \"refId\":
-    \"A\"\n        }\n      ],\n      \"title\": \"Request Rate\",\n      \"type\":
-    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"type\": \"prometheus\",\n
-    \       \"uid\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
-    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
-    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
-    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
-    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
-    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
-    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
-    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
-    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
-    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
-    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
-    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
-    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              }\n
-    \           ]\n          },\n          \"unit\": \"reqps\"\n        },\n        \"overrides\":
-    []\n      },\n      \"gridPos\": {\n        \"h\": 5,\n        \"w\": 18,\n        \"x\":
-    6,\n        \"y\": 55\n      },\n      \"id\": 3013,\n      \"options\": {\n        \"legend\":
-    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
-    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
-    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
-    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
-    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"editorMode\":
-    \"code\",\n          \"expr\": \"sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
-    destination_service_namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\":
-    \"Request Rate (req/s)\",\n          \"range\": true,\n          \"refId\": \"A\"\n
-    \       }\n      ],\n      \"title\": \"Request Rate Over Time\",\n      \"type\":
-    \"timeseries\"\n    },\n    {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n
-    \       \"type\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n
-    \         \"mappings\": [],\n          \"thresholds\": {\n            \"mode\":
-    \"absolute\",\n            \"steps\": [\n              {\n                \"color\":
-    \"green\",\n                \"value\": null\n              },\n              {\n
-    \               \"color\": \"yellow\",\n                \"value\": 0.1\n              },\n
-    \             {\n                \"color\": \"red\",\n                \"value\":
-    1\n              }\n            ]\n          },\n          \"unit\": \"percent\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    5,\n        \"w\": 6,\n        \"x\": 0,\n        \"y\": 60\n      },\n      \"id\":
-    3011,\n      \"options\": {\n        \"colorMode\": \"value\",\n        \"graphMode\":
-    \"area\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n
-    \       \"percentChangeColorMode\": \"standard\",\n        \"reduceOptions\": {\n
-    \         \"calcs\": [\n            \"lastNotNull\"\n          ],\n          \"fields\":
-    \"\",\n          \"values\": false\n        },\n        \"showPercentChange\": false,\n
-    \       \"textMode\": \"auto\",\n        \"wideLayout\": true\n      },\n      \"pluginVersion\":
-    \"11.1.3\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"(sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\", destination_service_namespace=\\\"$namespace\\\",
-    response_code=~\\\"5..\\\"}[5m])) / sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
-    destination_service_namespace=\\\"$namespace\\\"}[5m]))) * 100\",\n          \"refId\":
-    \"A\"\n        }\n      ],\n      \"title\": \"Error Rate (%)\",\n      \"type\":
-    \"stat\"\n    },\n    {\n      \"datasource\": {\n        \"type\": \"prometheus\",\n
-    \       \"uid\": \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\":
-    {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n
-    \         \"custom\": {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\":
-    false,\n            \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n
-    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\":
-    \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n
-    \           \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\":
-    false,\n              \"viz\": false\n            },\n            \"insertNulls\":
-    false,\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\":
-    1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\":
-    \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\":
-    false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\":
-    \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\":
-    \"off\"\n            }\n          },\n          \"mappings\": [],\n          \"thresholds\":
-    {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n
-    \               \"color\": \"green\",\n                \"value\": null\n              }\n
-    \           ]\n          },\n          \"unit\": \"percent\"\n        },\n        \"overrides\":
-    []\n      },\n      \"gridPos\": {\n        \"h\": 5,\n        \"w\": 18,\n        \"x\":
-    6,\n        \"y\": 60\n      },\n      \"id\": 3014,\n      \"options\": {\n        \"legend\":
-    {\n          \"calcs\": [\n            \"last\",\n            \"max\",\n            \"mean\"\n
-    \         ],\n          \"displayMode\": \"table\",\n          \"placement\": \"bottom\",\n
-    \         \"showLegend\": true\n        },\n        \"tooltip\": {\n          \"mode\":
-    \"multi\",\n          \"sort\": \"none\"\n        }\n      },\n      \"pluginVersion\":
-    \"10.0.0\",\n      \"targets\": [\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"editorMode\":
-    \"code\",\n          \"expr\": \"(sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\",
-    destination_service_namespace=\\\"$namespace\\\", response_code=~\\\"5..\\\"}[5m]))
-    / sum(rate(istio_requests_total{destination_service_name=\\\"sonarr\\\", destination_service_namespace=\\\"$namespace\\\"}[5m])))
-    * 100\",\n          \"legendFormat\": \"Error Rate (%)\",\n          \"range\":
-    true,\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Error
-    Rate Over Time\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\":
-    {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\"\n      },\n
-    \     \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\":
-    \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisBorderShow\":
-    false,\n            \"axisCenteredZero\": false,\n            \"axisColorMode\":
-    \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n
-    \           \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\":
-    10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\":
-    false,\n              \"tooltip\": false,\n              \"viz\": false\n            },\n
-    \           \"insertNulls\": false,\n            \"lineInterpolation\": \"linear\",\n
-    \           \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
-    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
-    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
-    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
-    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
-    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
-    [\n              {\n                \"color\": \"green\",\n                \"value\":
-    null\n              }\n            ]\n          },\n          \"unit\": \"Bps\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 65\n      },\n      \"id\":
-    3015,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
-    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
-    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
-    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
-    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_network_receive_bytes_total{pod=~\\\"$pod_regex\\\",
-    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"rx\",\n          \"refId\":
-    \"A\"\n        },\n        {\n          \"datasource\": {\n            \"name\":
-    \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n          \"expr\":
-    \"sum(rate(container_network_transmit_bytes_total{pod=~\\\"$pod_regex\\\", namespace=\\\"$namespace\\\"}[5m]))\",\n
-    \         \"legendFormat\": \"tx\",\n          \"refId\": \"B\"\n        }\n      ],\n
-    \     \"title\": \"Network Throughput\",\n      \"type\": \"timeseries\"\n    },\n
-    \   {\n      \"datasource\": {\n        \"name\": \"Prometheus\",\n        \"type\":
-    \"prometheus\"\n      },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\":
-    {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\":
-    {\n            \"axisBorderShow\": false,\n            \"axisCenteredZero\": false,\n
-    \           \"axisColorMode\": \"text\",\n            \"axisLabel\": \"\",\n            \"axisPlacement\":
-    \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n
-    \           \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\":
-    {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"viz\":
-    false\n            },\n            \"insertNulls\": false,\n            \"lineInterpolation\":
-    \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\":
-    {\n              \"type\": \"linear\"\n            },\n            \"showPoints\":
-    \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\":
-    \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\":
-    {\n              \"mode\": \"off\"\n            }\n          },\n          \"mappings\":
-    [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\":
-    [\n              {\n                \"color\": \"green\",\n                \"value\":
-    null\n              }\n            ]\n          },\n          \"unit\": \"short\"\n
-    \       },\n        \"overrides\": []\n      },\n      \"gridPos\": {\n        \"h\":
-    8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 65\n      },\n      \"id\":
-    3016,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [\n            \"last\",\n
-    \           \"max\",\n            \"mean\"\n          ],\n          \"displayMode\":
-    \"table\",\n          \"placement\": \"bottom\",\n          \"showLegend\": true\n
-    \       },\n        \"tooltip\": {\n          \"mode\": \"multi\",\n          \"sort\":
-    \"none\"\n        }\n      },\n      \"pluginVersion\": \"10.0.0\",\n      \"targets\":
-    [\n        {\n          \"datasource\": {\n            \"name\": \"Prometheus\",\n
-    \           \"type\": \"prometheus\"\n          },\n          \"expr\": \"sum(rate(container_network_receive_errors_total{pod=~\\\"$pod_regex\\\",
-    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"rx_err\",\n
-    \         \"refId\": \"A\"\n        },\n        {\n          \"datasource\": {\n
-    \           \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n
-    \         \"expr\": \"sum(rate(container_network_transmit_errors_total{pod=~\\\"$pod_regex\\\",
-    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"tx_err\",\n
-    \         \"refId\": \"B\"\n        },\n        {\n          \"datasource\": {\n
-    \           \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n
-    \         \"expr\": \"sum(rate(container_network_receive_packets_dropped_total{pod=~\\\"$pod_regex\\\",
-    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"rx_drop\",\n
-    \         \"refId\": \"C\"\n        },\n        {\n          \"datasource\": {\n
-    \           \"name\": \"Prometheus\",\n            \"type\": \"prometheus\"\n          },\n
-    \         \"expr\": \"sum(rate(container_network_transmit_packets_dropped_total{pod=~\\\"$pod_regex\\\",
-    namespace=\\\"$namespace\\\"}[5m]))\",\n          \"legendFormat\": \"tx_drop\",\n
-    \         \"refId\": \"D\"\n        }\n      ],\n      \"title\": \"Network Errors
-    / Drops\",\n      \"type\": \"timeseries\"\n    }\n  ],\n  \"refresh\": \"30s\",\n
-    \ \"schemaVersion\": 39,\n  \"tags\": [\n    \"sonarr\",\n    \"media-center\",\n
-    \   \"monitoring\",\n    \"exportarr\",\n    \"media-center\",\n    \"sonarr\"\n
-    \ ],\n  \"templating\": {\n    \"list\": [\n      {\n        \"hide\": 2,\n        \"name\":
-    \"namespace\",\n        \"query\": \"media-center\",\n        \"skipUrlSync\": false,\n
-    \       \"type\": \"constant\"\n      },\n      {\n        \"hide\": 2,\n        \"name\":
-    \"pod_regex\",\n        \"query\": \"sonarr-.*\",\n        \"skipUrlSync\": false,\n
-    \       \"type\": \"constant\"\n      },\n      {\n        \"hide\": 0,\n        \"label\":
-    \"Service\",\n        \"name\": \"service\",\n        \"query\": \"sonarr\",\n        \"queryValue\":
-    \"\",\n        \"skipUrlSync\": false,\n        \"type\": \"constant\"\n      },\n
-    \     {\n        \"hide\": 0,\n        \"label\": \"Component\",\n        \"name\":
-    \"component\",\n        \"query\": \"media-center\",\n        \"queryValue\": \"\",\n
-    \       \"skipUrlSync\": false,\n        \"type\": \"constant\"\n      }\n    ]\n
-    \ },\n  \"time\": {\n    \"from\": \"now-6h\",\n    \"to\": \"now\"\n  },\n  \"timepicker\":
-    {},\n  \"timezone\": \"\",\n  \"title\": \"Sonarr Dashboard\",\n  \"uid\": \"sonarr-media-center\",\n
-    \ \"version\": 2,\n  \"weekStart\": \"\"\n}"
----
-# Source: sonarr/charts/app-chart/templates/pvc.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -889,7 +114,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "pvc"
   annotations:
     helm.sh/resource-policy: keep
@@ -901,7 +126,7 @@ spec:
     requests:
       storage: 1Gi
 ---
-# Source: sonarr/charts/app-chart/templates/service.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -911,7 +136,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: service-http
   annotations:
     description: Sonarr media center HTTP service
@@ -926,7 +151,7 @@ spec:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
 ---
-# Source: sonarr/charts/app-chart/templates/service.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -936,7 +161,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: service-metrics
   annotations:
     description: Sonarr media center HTTP service
@@ -951,7 +176,7 @@ spec:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
 ---
-# Source: sonarr/charts/app-chart/templates/deployment.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -961,7 +186,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "deployment"
 spec:
   replicas: 1
@@ -978,7 +203,7 @@ spec:
         app.kubernetes.io/instance: sonarr
         app.kubernetes.io/name: sonarr
         app.kubernetes.io/version: 4.0.16.2944
-        helm.sh/chart: app-chart-0.0.1
+        helm.sh/chart: sonarr-0.0.4
         app.kubernetes.io/component: media-manager
         app.kubernetes.io/part-of: media-center
         logging.kubernetes.io/component: media-center
@@ -989,8 +214,6 @@ spec:
         fsGroup: 1011
         fsGroupChangePolicy: OnRootMismatch
         runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
         supplementalGroups:
         - 1010
         - 1003
@@ -1185,7 +408,7 @@ spec:
             sizeLimit: 1Gi
           name: tmp
 ---
-# Source: sonarr/charts/app-chart/templates/authorizationpolicy.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -1195,7 +418,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "authorization-policy"
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -1215,7 +438,7 @@ spec:
           ports:
           - "8080"
 ---
-# Source: sonarr/charts/app-chart/templates/authorizationpolicy.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -1225,7 +448,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "authorization-policy"
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -1245,7 +468,7 @@ spec:
           ports:
           - "8080"
 ---
-# Source: sonarr/charts/app-chart/templates/authorizationpolicy.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -1255,7 +478,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "authorization-policy"
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -1275,7 +498,7 @@ spec:
           ports:
           - "9100"
 ---
-# Source: sonarr/charts/app-chart/templates/destinationrule.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -1285,7 +508,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "destination-rule"
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -1305,7 +528,24 @@ spec:
       interval: 30s
       maxEjectionPercent: 50
 ---
-# Source: sonarr/charts/app-chart/templates/httproute.yaml
+# Source: sonarr/templates/all.yaml
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: sonarr-sonarr-dashboard
+  namespace: media-center
+  labels:
+    app.kubernetes.io/component: grafana-dashboard
+    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: sonarr-0.0.4
+spec:
+  json: |
+    {"annotations":{"list":[{"builtIn":1,"datasource":{"type":"grafana","uid":"-- Grafana --"},"enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations \u0026 Alerts","type":"dashboard"}]},"editable":true,"fiscalYearStartMonth":0,"graphTooltip":0,"id":171,"links":[],"liveNow":false,"panels":[{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":0},"id":1000,"panels":[],"title":"📊 Application Metrics","type":"row"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[{"options":{"0":{"color":"red","text":"Unhealthy"},"1":{"color":"green","text":"Healthy"}},"type":"value"}],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":0,"y":1},"id":1,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_system_status{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"System Status","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":10},{"color":"red","value":50}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":6,"y":1},"id":2,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Backlog Size","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[{"options":{"match":"null","result":{"text":"N/A"}},"type":"special"},{"options":{"from":-999999999999,"result":{"color":"green","text":"Draining"},"to":0},"type":"range"},{"options":{"from":0,"result":{"color":"red","text":"Growing"},"to":999999999999},"type":"range"}],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":0}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":12,"y":1},"id":3,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"delta(sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Backlog Delta (24h)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"episodes/hour"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":18,"y":1},"id":4,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(increase(sonarr_episode_downloaded_total{service=\"sonarr\", component=\"media-center\"}[1h])) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Import/Download Rate (1h)","type":"stat"},{"collapsed":true,"gridPos":{"h":1,"w":24,"x":0,"y":5},"id":2000,"panels":[],"title":"📈 Progress \u0026 Capacity","type":"row"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":0,"y":6},"id":2001,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_missing_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Missing Episodes","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Cutoff Unmet","refId":"B"}],"title":"Backlog Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":12,"y":6},"id":2002,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_downloaded_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Downloaded","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_missing_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Missing","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Total","refId":"C"}],"title":"Episode Flow Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":0,"y":14},"id":117,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(increase(sonarr_episode_downloaded_total{service=\"sonarr\",component=\"media-center\"}[7d]))","refId":"A"}],"title":"Downloaded Episodes (7d)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":6,"y":14},"id":118,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(increase(sonarr_episode_downloaded_total{service=\"sonarr\",component=\"media-center\"}[30d]))","refId":"A"}],"title":"Downloaded Episodes (30d)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":12,"y":14},"id":119,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"delta(sonarr_episode_missing_total{service=\"sonarr\", component=\"media-center\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Missing Episodes Δ (24h)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":18,"y":14},"id":120,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"delta(sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Cutoff Unmet Δ (24h)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":50},{"color":"red","value":100}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":0,"y":18},"id":113,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_history_total{service=\"sonarr\", component=\"media-center\"}","refId":"A"}],"title":"History Items","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":6,"y":18},"id":28,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_downloaded_total{service=\"sonarr\", component=\"media-center\"}","refId":"A"}],"title":"Downloaded Episodes","type":"stat"},{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":22},"id":3000,"panels":[],"title":"💻 Resource Usage","type":"row"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":85}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":8,"w":8,"x":0,"y":23},"id":3001,"options":{"displayMode":"gradient","minVizHeight":10,"minVizWidth":0,"orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showThresholdLabels":false,"showThresholdMarkers":true,"sizing":"auto","text":{}},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", container=\"sonarr\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"}) * 100","refId":"A"}],"title":"CPU Usage","type":"gauge"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":85}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":8,"w":8,"x":8,"y":23},"id":3002,"options":{"displayMode":"gradient","minVizHeight":10,"minVizWidth":0,"orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showThresholdLabels":false,"showThresholdMarkers":true,"sizing":"auto","text":{}},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(container_memory_working_set_bytes{namespace=\"$namespace\", container=\"sonarr\"}) / sum(kube_pod_container_resource_limits{resource=\"memory\", namespace=\"$namespace\", container=\"sonarr\"}) * 100","refId":"A"}],"title":"Memory Usage","type":"gauge"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":0.1},{"color":"red","value":0.5}]},"unit":"s"},"overrides":[]},"gridPos":{"h":8,"w":8,"x":16,"y":23},"id":3003,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\", container=\"sonarr\"}[5m]))","refId":"A"}],"title":"CPU Throttling Rate","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":0,"y":31},"id":3004,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", container=\"sonarr\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"}) * 100","legendFormat":"CPU Usage %","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"max((kube_pod_container_resource_requests{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"} / kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"}) * 100) by (namespace, container)","legendFormat":"CPU Request","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"100","legendFormat":"CPU Limit","refId":"C"}],"title":"CPU Usage Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"bytes"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":12,"y":31},"id":3005,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(container_memory_working_set_bytes{namespace=\"$namespace\", container=\"sonarr\"})","legendFormat":"Memory Used","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(kube_pod_container_resource_limits{resource=\"memory\", namespace=\"$namespace\", container=\"sonarr\"})","legendFormat":"Memory Limit","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(kube_pod_container_resource_requests{resource=\"memory\", namespace=\"$namespace\", container=\"sonarr\"})","legendFormat":"Memory Request","refId":"C"}],"title":"Memory Usage Over Time","type":"timeseries"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":80}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":4,"w":8,"x":0,"y":39},"id":3006,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","exemplar":false,"expr":"(kubelet_volume_stats_available_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"} / kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"}) * 100","interval":"","legendFormat":"__auto","range":true,"refId":"A"}],"title":"PVC Available %","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":80}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":4,"w":8,"x":8,"y":39},"id":3007,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"(kubelet_volume_stats_inodes_used{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"} / kubelet_volume_stats_inodes{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"}) * 100","refId":"A"}],"title":"PVC Inode Usage %","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"description":"Alerts: SabnzbdPVCHighUsage","fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":80}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":4,"w":8,"x":16,"y":39},"id":3012,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","expr":"(kubelet_volume_stats_used_bytes{persistentvolumeclaim=\"sonarr-config\", namespace=\"$namespace\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=\"sonarr-config\", namespace=\"$namespace\"}) * 100","range":true,"refId":"A"}],"title":"Config PVC Usage","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"Bps"},"overrides":[]},"gridPos":{"h":6,"w":24,"x":0,"y":43},"id":3008,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_fs_reads_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"Read IO","refId":"A"},{"datasource":{"type":"prometheus","uid":"prometheus"},"editorMode":"code","expr":"sum(rate(container_fs_writes_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","hide":false,"instant":false,"legendFormat":"Write IO","range":true,"refId":"B"}],"title":"Filesystem Read / Write IO","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"ms"},"overrides":[]},"gridPos":{"h":6,"w":24,"x":0,"y":49},"id":3009,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m])) by (le))","legendFormat":"p95 Response Time","refId":"A"}],"title":"Response Time (p95)","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"reqps"},"overrides":[]},"gridPos":{"h":5,"w":6,"x":0,"y":55},"id":3010,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))","refId":"A"}],"title":"Request Rate","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"reqps"},"overrides":[]},"gridPos":{"h":5,"w":18,"x":6,"y":55},"id":3013,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","expr":"sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))","legendFormat":"Request Rate (req/s)","range":true,"refId":"A"}],"title":"Request Rate Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":0.1},{"color":"red","value":1}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":5,"w":6,"x":0,"y":60},"id":3011,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"(sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\", response_code=~\"5..\"}[5m])) / sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))) * 100","refId":"A"}],"title":"Error Rate (%)","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":5,"w":18,"x":6,"y":60},"id":3014,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","expr":"(sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\", response_code=~\"5..\"}[5m])) / sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))) * 100","legendFormat":"Error Rate (%)","range":true,"refId":"A"}],"title":"Error Rate Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"Bps"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":0,"y":65},"id":3015,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_receive_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"rx","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_transmit_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"tx","refId":"B"}],"title":"Network Throughput","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":12,"y":65},"id":3016,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_receive_errors_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"rx_err","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_transmit_errors_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"tx_err","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_receive_packets_dropped_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"rx_drop","refId":"C"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_transmit_packets_dropped_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"tx_drop","refId":"D"}],"title":"Network Errors / Drops","type":"timeseries"}],"refresh":"30s","schemaVersion":39,"tags":["sonarr","media-center","monitoring","exportarr","media-center","sonarr"],"templating":{"list":[{"hide":2,"name":"namespace","query":"media-center","skipUrlSync":false,"type":"constant"},{"hide":2,"name":"pod_regex","query":"sonarr-.*","skipUrlSync":false,"type":"constant"},{"hide":0,"label":"Service","name":"service","query":"sonarr","queryValue":"","skipUrlSync":false,"type":"constant"},{"hide":0,"label":"Component","name":"component","query":"media-center","queryValue":"","skipUrlSync":false,"type":"constant"}]},"time":{"from":"now-6h","to":"now"},"timepicker":{},"timezone":"","title":"Sonarr Dashboard","uid":"sonarr-media-center","version":2,"weekStart":""}
+  allowCrossNamespaceImport: true
+---
+# Source: sonarr/templates/all.yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -1315,7 +555,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "http-route"
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -1341,7 +581,7 @@ spec:
           port: 8080
           weight: 100
 ---
-# Source: sonarr/charts/app-chart/templates/httproute.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -1351,7 +591,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "http-route"
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -1376,7 +616,7 @@ spec:
             statusCode: 301
           type: RequestRedirect
 ---
-# Source: sonarr/charts/app-chart/templates/prometheusrule.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -1386,7 +626,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "prometheus-rule"
 
 spec:
@@ -1559,7 +799,7 @@ spec:
             service: sonarr
             severity: critical
 ---
-# Source: sonarr/charts/app-chart/templates/servicemonitor.yaml
+# Source: sonarr/templates/all.yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -1569,7 +809,7 @@ metadata:
     app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: app-chart-0.0.1
+    helm.sh/chart: sonarr-0.0.4
     app.kubernetes.io/component: "servicemonitor"
   annotations:
     argocd.argoproj.io/sync-wave: "2"
