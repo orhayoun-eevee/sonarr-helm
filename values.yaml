@@ -272,8 +272,7 @@ deployment:
       enabled: true
       image:
         repository: ghcr.io/runlix/sonarr
-        tag: "release-4.0.16.2944-latest"
-        digest: "sha256:ec4ada4e4042f2226470c1875e503ee0137d589a3e3292d5d665a6e4276be8e2"
+        tag: "release-4.0.16.2944-latest@sha256:ec4ada4e4042f2226470c1875e503ee0137d589a3e3292d5d665a6e4276be8e2"
         pullPolicy: IfNotPresent
 
       env:
@@ -369,8 +368,7 @@ deployment:
       enabled: true
       image:
         repository: ghcr.io/orhayoun/exportarr
-        tag: "v2.3.1"
-        digest: "sha256:2650f6a501b1d691daf5dfe758068f44336d0bb1d443f9db2c94900244d423bc"
+        tag: "v2.3.1@sha256:2650f6a501b1d691daf5dfe758068f44336d0bb1d443f9db2c94900244d423bc"
         pullPolicy: IfNotPresent
 
       args:

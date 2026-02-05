@@ -2,14 +2,14 @@ apiVersion: v2
 name: sonarr
 description: A Helm chart for Sonarr using application-v2
 type: application
-version: 0.0.4
+version: 0.0.5
 appVersion: "4.0.16.2944"
 keywords:
   - sonarr
   - media-center
 dependencies:
   - name: lib-chart
-    version: "0.0.4"
+    version: "0.0.5"
     repository: "oci://ghcr.io/orhayoun-eevee/lib-chart"
 # dependencies:
 #   - name: lib-chart
