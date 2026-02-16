@@ -1,0 +1,384 @@
+---
+# Source: sonarr/templates/all.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sonarr-default
+  namespace: media-center
+  labels:
+    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: sonarr-0.0.7
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sonarr
+      app.kubernetes.io/instance: test-release
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: shared-platform-gateway
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: prometheus
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: homeassistant
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: home-assistant
+      ports:
+      - port: 15008
+        protocol: TCP
+  egress:
+    - ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+      to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: postgresql
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: databases
+    - ports:
+      - port: 15008
+        protocol: TCP
+      to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: download-clients
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: istio-system
+    - ports:
+      - port: 443
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 0.0.0.0/0
+          except:
+          - 10.42.0.0/16
+          - 10.43.0.0/16
+          - 192.168.0.0/16
+---
+# Source: sonarr/templates/all.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sonarr
+  namespace: media-center
+  labels:
+    app.kubernetes.io/component: serviceaccount
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: sonarr-0.0.7
+  annotations:
+    description: Sonarr media center service account
+automountServiceAccountToken: false
+---
+# Source: sonarr/templates/all.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarr-config
+  namespace: media-center
+  labels:
+    app.kubernetes.io/component: pvc
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: sonarr-0.0.7
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Source: sonarr/templates/all.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr-http
+  namespace: media-center
+  labels:
+    app.kubernetes.io/component: service-http
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: sonarr-0.0.7
+  annotations:
+    description: Sonarr media center HTTP service
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/instance: test-release
+---
+# Source: sonarr/templates/all.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr
+  namespace: media-center
+  labels:
+    app.kubernetes.io/component: deployment
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/version: 4.0.16.2944
+    helm.sh/chart: sonarr-0.0.7
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sonarr
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: deployment
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: sonarr
+        app.kubernetes.io/version: 4.0.16.2944
+        helm.sh/chart: sonarr-0.0.7
+        app.kubernetes.io/part-of: media-center
+        logging.kubernetes.io/component: media-center
+        logging.kubernetes.io/service: sonarr
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 1011
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+        supplementalGroups:
+        - 1010
+        - 1003
+      serviceAccountName: sonarr
+      nodeSelector:
+        kubernetes.io/os: linux
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: exportarr
+          image: ghcr.io/orhayoun/exportarr:v2.3.1@sha256:2650f6a501b1d691daf5dfe758068f44336d0bb1d443f9db2c94900244d423bc
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9100
+              protocol: TCP
+          args:
+            - sonarr
+          env:
+            - name: URL
+              value: http://localhost:8080
+            - name: CONFIG
+              value: /config/config.xml
+            - name: PORT
+              value: "9100"
+            - name: ENABLE_ADDITIONAL_METRICS
+              value: "false"
+            - name: ENABLE_UNKNOWN_QUEUE_ITEMS
+              value: "false"
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              readOnly: true
+          resources:
+            limits:
+              cpu: 100m
+              ephemeral-storage: 100Mi
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              ephemeral-storage: 100Mi
+              memory: 32Mi
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /metrics
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /metrics
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /metrics
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+        - name: sonarr
+          image: ghcr.io/runlix/sonarr:release-4.0.16.2944-latest@sha256:ec4ada4e4042f2226470c1875e503ee0137d589a3e3292d5d665a6e4276be8e2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: TZ
+              value: UTC
+            - name: SONARR__SERVER__PORT
+              value: "8080"
+            - name: SONARR__SERVER__BINDADDRESS
+              value: 0.0.0.0
+          volumeMounts:
+            - mountPath: /config
+              name: config
+            - mountPath: /media
+              name: media
+            - mountPath: /media-old
+              name: media-old
+            - mountPath: /downloads
+              name: downloads
+            - mountPath: /backup
+              name: backup
+            - mountPath: /tmp
+              name: tmp
+          resources:
+            limits:
+              cpu: 500m
+              ephemeral-storage: 2Gi
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              ephemeral-storage: 2Gi
+              memory: 256Mi
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /ping
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 1011
+            runAsNonRoot: true
+            runAsUser: 1012
+            seccompProfile:
+              type: RuntimeDefault
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: sonarr-config
+        - name: media
+          nfs:
+            path: /mnt/vol1/media-center/media/tv_shows
+            server: snorlax.orhayoun.com
+        - name: media-old
+          nfs:
+            path: /mnt/vol1/Media/videos/TV_Shows
+            server: snorlax.orhayoun.com
+        - name: downloads
+          nfs:
+            path: /mnt/vol1/media-center/downloads
+            server: snorlax.orhayoun.com
+        - name: backup
+          nfs:
+            path: /mnt/vol1/media-center/backup/sonarr
+            server: snorlax.orhayoun.com
+        - emptyDir:
+            sizeLimit: 1Gi
+          name: tmp
