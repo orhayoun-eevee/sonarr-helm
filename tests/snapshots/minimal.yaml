@@ -280,7 +280,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: sonarr
-          image: ghcr.io/runlix/sonarr:release-4.0.16.2944-latest@sha256:ec4ada4e4042f2226470c1875e503ee0137d589a3e3292d5d665a6e4276be8e2
+          image: ghcr.io/runlix/sonarr:release-4.0.16.2944-latest@sha256:7aefee37afd5d5567e5c591067be95d1a95759b75569148bfdd43dbe46b97c50
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
