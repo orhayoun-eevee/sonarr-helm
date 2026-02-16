@@ -12,7 +12,11 @@ tests:
           value: sonarr-k8s.orhayoun.com
       - documentIndex: 12
         equal:
-          path: spec.instanceSelector.matchLabels.dashboards
+          path: spec.instanceSelector.matchLabels["app.kubernetes.io/instance"]
+          value: prometheus
+      - documentIndex: 12
+        equal:
+          path: spec.instanceSelector.matchLabels["app.kubernetes.io/name"]
           value: grafana
       - documentIndex: 10
         equal:
