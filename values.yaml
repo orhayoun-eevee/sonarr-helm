@@ -211,7 +211,7 @@ network:
     # ----------------------------------------------------------------------------
     # Circuit Breaker Configuration
     # ----------------------------------------------------------------------------
-    destinationrule:
+    destinationRule:
       enabled: true
       host: sonarr-http
       trafficPolicy:

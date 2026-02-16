@@ -5,20 +5,20 @@ tests:
   - it: renders expected default resource set and ingress host
     asserts:
       - hasDocuments:
-          count: 14
+          count: 15
       - documentIndex: 4
         equal:
           path: spec.hostnames[0]
           value: sonarr-k8s.orhayoun.com
-      - documentIndex: 12
+      - documentIndex: 13
         equal:
           path: spec.instanceSelector.matchLabels["app.kubernetes.io/instance"]
           value: prometheus
-      - documentIndex: 12
+      - documentIndex: 13
         equal:
           path: spec.instanceSelector.matchLabels["app.kubernetes.io/name"]
           value: grafana
-      - documentIndex: 10
+      - documentIndex: 11
         equal:
           path: kind
           value: ServiceMonitor
@@ -41,7 +41,7 @@ tests:
         equal:
           path: spec.template.spec.containers[1].securityContext.runAsGroup
           value: 1011
-      - documentIndex: 13
+      - documentIndex: 14
         equal:
           path: metadata.name
           value: sonarr-config
