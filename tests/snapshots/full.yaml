@@ -6,18 +6,17 @@ metadata:
   name: sonarr-default
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "network-policy"
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: sonarr
       app.kubernetes.io/name: sonarr
+      app.kubernetes.io/instance: test-release
   policyTypes:
     - Ingress
     - Egress
@@ -95,11 +94,12 @@ metadata:
   name: sonarr
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: serviceaccount
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "serviceaccount"
+    helm.sh/chart: sonarr-0.0.7
   annotations:
     description: Sonarr media center service account
 automountServiceAccountToken: false
@@ -111,11 +111,12 @@ metadata:
   name: sonarr-config
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: pvc
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "pvc"
+    helm.sh/chart: sonarr-0.0.7
   annotations:
     helm.sh/resource-policy: keep
 spec:
@@ -133,11 +134,12 @@ metadata:
   name: sonarr-http
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: service-http
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: service-http
+    helm.sh/chart: sonarr-0.0.7
   annotations:
     description: Sonarr media center HTTP service
 spec:
@@ -148,8 +150,8 @@ spec:
       targetPort: http
       protocol: TCP
   selector:
-    app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
+    app.kubernetes.io/instance: test-release
 ---
 # Source: sonarr/templates/all.yaml
 apiVersion: v1
@@ -158,11 +160,12 @@ metadata:
   name: sonarr-metrics
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: service-metrics
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: service-metrics
+    helm.sh/chart: sonarr-0.0.7
   annotations:
     description: Sonarr media center HTTP service
 spec:
@@ -173,8 +176,8 @@ spec:
       targetPort: metrics
       protocol: TCP
   selector:
-    app.kubernetes.io/instance: sonarr
     app.kubernetes.io/name: sonarr
+    app.kubernetes.io/instance: test-release
 ---
 # Source: sonarr/templates/all.yaml
 apiVersion: apps/v1
@@ -183,11 +186,12 @@ metadata:
   name: sonarr
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: deployment
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "deployment"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -195,16 +199,17 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/instance: sonarr
       app.kubernetes.io/name: sonarr
+      app.kubernetes.io/instance: test-release
   template:
     metadata:
       labels:
-        app.kubernetes.io/instance: sonarr
+        app.kubernetes.io/component: deployment
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: sonarr
         app.kubernetes.io/version: 4.0.16.2944
-        helm.sh/chart: sonarr-0.0.4
-        app.kubernetes.io/component: media-manager
+        helm.sh/chart: sonarr-0.0.7
         app.kubernetes.io/part-of: media-center
         logging.kubernetes.io/component: media-center
         logging.kubernetes.io/service: sonarr
@@ -218,6 +223,8 @@ spec:
         - 1010
         - 1003
       serviceAccountName: sonarr
+      nodeSelector:
+        kubernetes.io/os: linux
       dnsPolicy: ClusterFirst
       automountServiceAccountToken: false
       enableServiceLinks: false
@@ -379,32 +386,26 @@ spec:
             seccompProfile:
               type: RuntimeDefault
       volumes:
-        -
-          name: config
+        - name: config
           persistentVolumeClaim:
             claimName: sonarr-config
-        -
-          name: media
+        - name: media
           nfs:
             path: /mnt/vol1/media-center/media/tv_shows
             server: snorlax.orhayoun.com
-        -
-          name: media-old
+        - name: media-old
           nfs:
             path: /mnt/vol1/Media/videos/TV_Shows
             server: snorlax.orhayoun.com
-        -
-          name: downloads
+        - name: downloads
           nfs:
             path: /mnt/vol1/media-center/downloads
             server: snorlax.orhayoun.com
-        -
-          name: backup
+        - name: backup
           nfs:
             path: /mnt/vol1/media-center/backup/sonarr
             server: snorlax.orhayoun.com
-        -
-          emptyDir:
+        - emptyDir:
             sizeLimit: 1Gi
           name: tmp
 ---
@@ -415,18 +416,17 @@ metadata:
   name: sonarr-homeassistant
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: authorization-policy
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "authorization-policy"
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/instance: sonarr
       app.kubernetes.io/name: sonarr
+      app.kubernetes.io/instance: test-release
   action: ALLOW
   rules:
     - from:
@@ -445,18 +445,17 @@ metadata:
   name: sonarr-ingress
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: authorization-policy
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "authorization-policy"
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/instance: sonarr
       app.kubernetes.io/name: sonarr
+      app.kubernetes.io/instance: test-release
   action: ALLOW
   rules:
     - from:
@@ -475,18 +474,17 @@ metadata:
   name: sonarr-prometheus
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: authorization-policy
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "authorization-policy"
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/instance: sonarr
       app.kubernetes.io/name: sonarr
+      app.kubernetes.io/instance: test-release
   action: ALLOW
   rules:
     - from:
@@ -499,36 +497,6 @@ spec:
           - "9100"
 ---
 # Source: sonarr/templates/all.yaml
-apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
-metadata:
-  name: sonarr
-  namespace: media-center
-  labels:
-    app.kubernetes.io/instance: sonarr
-    app.kubernetes.io/name: sonarr
-    app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "destination-rule"
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  host: sonarr-http
-  trafficPolicy:
-    connectionPool:
-      http:
-        http1MaxPendingRequests: 10
-        http2MaxRequests: 100
-        maxRequestsPerConnection: 2
-      tcp:
-        maxConnections: 100
-    outlierDetection:
-      baseEjectionTime: 30s
-      consecutive5xxErrors: 5
-      interval: 30s
-      maxEjectionPercent: 50
----
-# Source: sonarr/templates/all.yaml
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -536,11 +504,15 @@ metadata:
   namespace: media-center
   labels:
     app.kubernetes.io/component: grafana-dashboard
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
+    helm.sh/chart: sonarr-0.0.7
 spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
   json: |
     {"annotations":{"list":[{"builtIn":1,"datasource":{"type":"grafana","uid":"-- Grafana --"},"enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations \u0026 Alerts","type":"dashboard"}]},"editable":true,"fiscalYearStartMonth":0,"graphTooltip":0,"id":171,"links":[],"liveNow":false,"panels":[{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":0},"id":1000,"panels":[],"title":"📊 Application Metrics","type":"row"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[{"options":{"0":{"color":"red","text":"Unhealthy"},"1":{"color":"green","text":"Healthy"}},"type":"value"}],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":0,"y":1},"id":1,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_system_status{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"System Status","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":10},{"color":"red","value":50}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":6,"y":1},"id":2,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Backlog Size","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[{"options":{"match":"null","result":{"text":"N/A"}},"type":"special"},{"options":{"from":-999999999999,"result":{"color":"green","text":"Draining"},"to":0},"type":"range"},{"options":{"from":0,"result":{"color":"red","text":"Growing"},"to":999999999999},"type":"range"}],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":0}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":12,"y":1},"id":3,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"delta(sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Backlog Delta (24h)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"episodes/hour"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":18,"y":1},"id":4,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(increase(sonarr_episode_downloaded_total{service=\"sonarr\", component=\"media-center\"}[1h])) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Import/Download Rate (1h)","type":"stat"},{"collapsed":true,"gridPos":{"h":1,"w":24,"x":0,"y":5},"id":2000,"panels":[],"title":"📈 Progress \u0026 Capacity","type":"row"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":0,"y":6},"id":2001,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_missing_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Missing Episodes","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Cutoff Unmet","refId":"B"}],"title":"Backlog Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":12,"y":6},"id":2002,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_downloaded_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Downloaded","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_missing_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Missing","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_total{service=\"sonarr\", component=\"media-center\"} * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","legendFormat":"Total","refId":"C"}],"title":"Episode Flow Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":0,"y":14},"id":117,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(increase(sonarr_episode_downloaded_total{service=\"sonarr\",component=\"media-center\"}[7d]))","refId":"A"}],"title":"Downloaded Episodes (7d)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":6,"y":14},"id":118,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(increase(sonarr_episode_downloaded_total{service=\"sonarr\",component=\"media-center\"}[30d]))","refId":"A"}],"title":"Downloaded Episodes (30d)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":12,"y":14},"id":119,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"delta(sonarr_episode_missing_total{service=\"sonarr\", component=\"media-center\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Missing Episodes Δ (24h)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":18,"y":14},"id":120,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"delta(sonarr_episode_cutoff_unmet_total{service=\"sonarr\", component=\"media-center\"}[24h]) * on(pod) group_left() (kube_pod_status_phase{namespace=\"$namespace\",pod=~\"$pod_regex\",phase=\"Running\"} @ end())","refId":"A"}],"title":"Cutoff Unmet Δ (24h)","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":50},{"color":"red","value":100}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":0,"y":18},"id":113,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_history_total{service=\"sonarr\", component=\"media-center\"}","refId":"A"}],"title":"History Items","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":4,"w":6,"x":6,"y":18},"id":28,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sonarr_episode_downloaded_total{service=\"sonarr\", component=\"media-center\"}","refId":"A"}],"title":"Downloaded Episodes","type":"stat"},{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":22},"id":3000,"panels":[],"title":"💻 Resource Usage","type":"row"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":85}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":8,"w":8,"x":0,"y":23},"id":3001,"options":{"displayMode":"gradient","minVizHeight":10,"minVizWidth":0,"orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showThresholdLabels":false,"showThresholdMarkers":true,"sizing":"auto","text":{}},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", container=\"sonarr\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"}) * 100","refId":"A"}],"title":"CPU Usage","type":"gauge"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":85}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":8,"w":8,"x":8,"y":23},"id":3002,"options":{"displayMode":"gradient","minVizHeight":10,"minVizWidth":0,"orientation":"auto","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showThresholdLabels":false,"showThresholdMarkers":true,"sizing":"auto","text":{}},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(container_memory_working_set_bytes{namespace=\"$namespace\", container=\"sonarr\"}) / sum(kube_pod_container_resource_limits{resource=\"memory\", namespace=\"$namespace\", container=\"sonarr\"}) * 100","refId":"A"}],"title":"Memory Usage","type":"gauge"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":0.1},{"color":"red","value":0.5}]},"unit":"s"},"overrides":[]},"gridPos":{"h":8,"w":8,"x":16,"y":23},"id":3003,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\", container=\"sonarr\"}[5m]))","refId":"A"}],"title":"CPU Throttling Rate","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":0,"y":31},"id":3004,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", container=\"sonarr\"}[5m])) / sum(kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"}) * 100","legendFormat":"CPU Usage %","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"max((kube_pod_container_resource_requests{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"} / kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\", container=\"sonarr\"}) * 100) by (namespace, container)","legendFormat":"CPU Request","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"100","legendFormat":"CPU Limit","refId":"C"}],"title":"CPU Usage Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"bytes"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":12,"y":31},"id":3005,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(container_memory_working_set_bytes{namespace=\"$namespace\", container=\"sonarr\"})","legendFormat":"Memory Used","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(kube_pod_container_resource_limits{resource=\"memory\", namespace=\"$namespace\", container=\"sonarr\"})","legendFormat":"Memory Limit","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(kube_pod_container_resource_requests{resource=\"memory\", namespace=\"$namespace\", container=\"sonarr\"})","legendFormat":"Memory Request","refId":"C"}],"title":"Memory Usage Over Time","type":"timeseries"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":80}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":4,"w":8,"x":0,"y":39},"id":3006,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","exemplar":false,"expr":"(kubelet_volume_stats_available_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"} / kubelet_volume_stats_capacity_bytes{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"}) * 100","interval":"","legendFormat":"__auto","range":true,"refId":"A"}],"title":"PVC Available %","type":"stat"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":80}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":4,"w":8,"x":8,"y":39},"id":3007,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"(kubelet_volume_stats_inodes_used{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"} / kubelet_volume_stats_inodes{namespace=\"$namespace\", persistentvolumeclaim=~\".*sonarr.*\"}) * 100","refId":"A"}],"title":"PVC Inode Usage %","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"description":"Alerts: SabnzbdPVCHighUsage","fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"max":100,"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":70},{"color":"red","value":80}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":4,"w":8,"x":16,"y":39},"id":3012,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","expr":"(kubelet_volume_stats_used_bytes{persistentvolumeclaim=\"sonarr-config\", namespace=\"$namespace\"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=\"sonarr-config\", namespace=\"$namespace\"}) * 100","range":true,"refId":"A"}],"title":"Config PVC Usage","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"Bps"},"overrides":[]},"gridPos":{"h":6,"w":24,"x":0,"y":43},"id":3008,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_fs_reads_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"Read IO","refId":"A"},{"datasource":{"type":"prometheus","uid":"prometheus"},"editorMode":"code","expr":"sum(rate(container_fs_writes_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","hide":false,"instant":false,"legendFormat":"Write IO","range":true,"refId":"B"}],"title":"Filesystem Read / Write IO","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"ms"},"overrides":[]},"gridPos":{"h":6,"w":24,"x":0,"y":49},"id":3009,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m])) by (le))","legendFormat":"p95 Response Time","refId":"A"}],"title":"Response Time (p95)","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"reqps"},"overrides":[]},"gridPos":{"h":5,"w":6,"x":0,"y":55},"id":3010,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))","refId":"A"}],"title":"Request Rate","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"reqps"},"overrides":[]},"gridPos":{"h":5,"w":18,"x":6,"y":55},"id":3013,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","expr":"sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))","legendFormat":"Request Rate (req/s)","range":true,"refId":"A"}],"title":"Request Rate Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"thresholds"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":0.1},{"color":"red","value":1}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":5,"w":6,"x":0,"y":60},"id":3011,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","percentChangeColorMode":"standard","reduceOptions":{"calcs":["lastNotNull"],"fields":"","values":false},"showPercentChange":false,"textMode":"auto","wideLayout":true},"pluginVersion":"11.1.3","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"(sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\", response_code=~\"5..\"}[5m])) / sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))) * 100","refId":"A"}],"title":"Error Rate (%)","type":"stat"},{"datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"percent"},"overrides":[]},"gridPos":{"h":5,"w":18,"x":6,"y":60},"id":3014,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"editorMode":"code","expr":"(sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\", response_code=~\"5..\"}[5m])) / sum(rate(istio_requests_total{destination_service_name=\"sonarr\", destination_service_namespace=\"$namespace\"}[5m]))) * 100","legendFormat":"Error Rate (%)","range":true,"refId":"A"}],"title":"Error Rate Over Time","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"Bps"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":0,"y":65},"id":3015,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_receive_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"rx","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_transmit_bytes_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"tx","refId":"B"}],"title":"Network Throughput","type":"timeseries"},{"datasource":{"name":"Prometheus","type":"prometheus"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":1,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]},"unit":"short"},"overrides":[]},"gridPos":{"h":8,"w":12,"x":12,"y":65},"id":3016,"options":{"legend":{"calcs":["last","max","mean"],"displayMode":"table","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.0.0","targets":[{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_receive_errors_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"rx_err","refId":"A"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_transmit_errors_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"tx_err","refId":"B"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_receive_packets_dropped_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"rx_drop","refId":"C"},{"datasource":{"name":"Prometheus","type":"prometheus"},"expr":"sum(rate(container_network_transmit_packets_dropped_total{pod=~\"$pod_regex\", namespace=\"$namespace\"}[5m]))","legendFormat":"tx_drop","refId":"D"}],"title":"Network Errors / Drops","type":"timeseries"}],"refresh":"30s","schemaVersion":39,"tags":["sonarr","media-center","monitoring","exportarr","media-center","sonarr"],"templating":{"list":[{"hide":2,"name":"namespace","query":"media-center","skipUrlSync":false,"type":"constant"},{"hide":2,"name":"pod_regex","query":"sonarr-.*","skipUrlSync":false,"type":"constant"},{"hide":0,"label":"Service","name":"service","query":"sonarr","queryValue":"","skipUrlSync":false,"type":"constant"},{"hide":0,"label":"Component","name":"component","query":"media-center","queryValue":"","skipUrlSync":false,"type":"constant"}]},"time":{"from":"now-6h","to":"now"},"timepicker":{},"timezone":"","title":"Sonarr Dashboard","uid":"sonarr-media-center","version":2,"weekStart":""}
   allowCrossNamespaceImport: true
@@ -552,13 +524,12 @@ metadata:
   name: sonarr-route
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: http-route
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "http-route"
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   parentRefs:
     - name: shared-platform-gateway
@@ -588,13 +559,12 @@ metadata:
   name: sonarr-http-redirect
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: http-route
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "http-route"
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   parentRefs:
     - name: shared-platform-gateway
@@ -623,12 +593,12 @@ metadata:
   name: sonarr
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: prometheus-rule
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "prometheus-rule"
-
+    helm.sh/chart: sonarr-0.0.7
 spec:
   groups:
     - name: sonarr.rules
@@ -772,9 +742,17 @@ spec:
             description: Sonarr is experiencing authorization policy denials. {{ $value }}
               requests/sec are being denied.
             summary: Sonarr authorization policy denials detected
-          expr: sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center",
-            destination_service_name="sonarr", request_protocol="http", response_code="403",
-            response_flags="SEC"}[5m])) > 0
+          expr: |
+            sum(
+              rate(istio_requests_total{
+                destination_workload="sonarr",
+                destination_workload_namespace="media-center",
+                destination_service_name="sonarr",
+                request_protocol="http",
+                response_code="403",
+                response_flags="SEC"
+              }[5m])
+            ) > 0
           for: 2m
           labels:
             component: media-center
@@ -788,7 +766,16 @@ spec:
             summary: Sonarr high authorization denial rate
           expr: |
             (
-              sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center", destination_service_name="sonarr", request_protocol="http", response_code="403", response_flags="SEC"}[5m]))
+              sum(
+                rate(istio_requests_total{
+                  destination_workload="sonarr",
+                  destination_workload_namespace="media-center",
+                  destination_service_name="sonarr",
+                  request_protocol="http",
+                  response_code="403",
+                  response_flags="SEC"
+                }[5m])
+              )
               /
               sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center", destination_service_name="sonarr", request_protocol="http"}[5m]))
             ) * 100 > 5
@@ -806,17 +793,15 @@ metadata:
   name: sonarr
   namespace: media-center
   labels:
-    app.kubernetes.io/instance: sonarr
+    app.kubernetes.io/component: servicemonitor
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.4
-    app.kubernetes.io/component: "servicemonitor"
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    helm.sh/chart: sonarr-0.0.7
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: service-metrics
       app.kubernetes.io/instance: sonarr
       app.kubernetes.io/name: sonarr
   namespaceSelector:

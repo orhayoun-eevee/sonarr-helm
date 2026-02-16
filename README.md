@@ -1,45 +1,75 @@
 # Sonarr Helm Chart
 
-This Helm chart deploys Sonarr, a TV show collection manager, using the `app-chart` dependency pattern. The chart orchestrates application deployment, networking, and monitoring resources.
+This chart deploys Sonarr using the shared dependency `lib-chart` (`0.0.7`).
 
 ## Installation
 
 ```bash
-helm install sonarr ./charts/services/sonarr-new --namespace media-center
+helm install sonarr . --namespace media-center
 ```
-
-## Configuration
-
-See `values.yaml` for all available configuration options. The chart is organized into main sections:
-
-- `app-chart`: Core application deployment configuration (Deployment, Services, PVC, etc.)
-- `network`: Network access and security policies (HTTPRoute, NetworkPolicy)
-- `metrics`: Monitoring, alerting, and dashboards (ServiceMonitor, PrometheusRule)
 
 ## Dependencies
 
-This chart depends on:
-- `app-chart` (v0.0.1) - Common application chart library
+- `lib-chart` (`0.0.7`) from `oci://ghcr.io/orhayoun-eevee`
 
-Before installing, ensure the dependency is available.
+Update dependencies from chart root:
 
-Update dependencies:
 ```bash
-cd charts/services/sonarr-new
-helm dependency update
+helm dependency build
 ```
 
-## Key Differences from Radarr
+## Validation and Testing
 
-- **User ID**: 1012 (vs Radarr's 1013)
-- **Group ID**: 1011 (same as Radarr)
-- **Media Path**: `/mnt/vol1/media-center/media/tv_shows` (vs movies)
-- **Missing Items Metric**: `missing_episodes_total` (vs `missing_movies_total`)
-- **Alert Names**: `SonarrCutoffUnmetHigh`, `SonarrMissingEpisodesHigh` (vs Radarr's movie alerts)
-- **Exportarr Service Name**: "Sonarr" (vs "Radarr")
+This chart follows the same reusable 5-layer validation pipeline used by `helm-common-lib`:
+
+1. Syntax and structure (`yamllint`, `helm lint --strict`)
+2. Kubernetes schema validation (`kubeconform`) on rendered scenarios
+3. Metadata and version checks (`ct lint` + version bump policy)
+4. Unit and regression checks (`helm-unittest` + scenario snapshots)
+5. Policy checks (`checkov`, `kube-linter`)
+
+### CI Workflows
+
+- PR validation: `.github/workflows/on-pr.yaml` -> `build-workflow/.github/workflows/helm-validate.yaml`
+- Release: `.github/workflows/on-tag.yaml` -> `build-workflow/.github/workflows/release-chart.yaml`
+
+### Local Docker Validation
+
+```bash
+make docker-build
+make deps
+make snapshot-update
+make ci
+```
+
+### Snapshot Drift Behavior
+
+Snapshots in `tests/snapshots/*.yaml` are part of CI contract.
+If rendered output changes and snapshots are not updated (or are updated incorrectly), Layer 4 fails the PR.
+
+### Test Assets
+
+- `tests/sonarr_contract_test.yaml`
+- `tests/scenarios/full.yaml`
+- `tests/scenarios/minimal.yaml`
+- `tests/snapshots/*.yaml`
+
+## Version Bump Automation
+
+```bash
+make bump VERSION=x.y.z
+```
+
+This updates `Chart.yaml`, refreshes `Chart.lock`, and regenerates snapshots.
+
+## App-Specific Notes
+
+- Namespace: `media-center`
+- Main container runs as UID/GID `1012/1011`
+- Config PVC claim: `sonarr-config` (RWO)
 
 ## References
 
-- **Sonarr Documentation**: https://wiki.servarr.com/sonarr
-- **Sonarr Environment Variables**: https://wiki.servarr.com/sonarr/environment-variables
-- **Chart Dependencies**: See `Chart.yaml` for dependency versions
+- https://sonarr.tv/
+- `Chart.yaml`
+- `values.yaml`

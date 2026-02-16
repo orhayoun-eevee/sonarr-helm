@@ -8,9 +8,7 @@ global:
   namespace: media-center
   chart:
     appVersion: 4.0.16.2944
-  labels:
-    overrides:
-      app.kubernetes.io/instance: sonarr
+  labels: {}
 
 
 # ----------------------------------------------------------------------------
@@ -87,7 +85,7 @@ network:
                   statusCode: 301
   networkPolicy:
     enabled: true
-    items: 
+    items:
       default:
         enabled: true
         policyTypes:
@@ -110,7 +108,7 @@ network:
                 podSelector:
                   matchLabels:
                     app.kubernetes.io/name: prometheus
-              
+
               # Home Assistant API access (HTTP + HBONE for ambient mesh)
               - namespaceSelector:
                   matchLabels:
@@ -148,7 +146,7 @@ network:
             ports:
               - port: 5432
                 protocol: TCP
-                
+
           - to:
               - namespaceSelector:
                   matchLabels:
@@ -246,7 +244,6 @@ deployment:
 
   # Pod labels
   podLabels:
-    app.kubernetes.io/component: media-manager
     app.kubernetes.io/part-of: media-center
     logging.kubernetes.io/component: media-center
     logging.kubernetes.io/service: sonarr
@@ -282,12 +279,12 @@ deployment:
           value: "8080"
         - name: SONARR__SERVER__BINDADDRESS
           value: "0.0.0.0"
-      
+
       ports:
         - containerPort: 8080
           name: http
           protocol: TCP
-      
+
       volumeMounts:
         - name: config
           mountPath: /config
@@ -512,7 +509,6 @@ metrics:
       matchLabels:
         app.kubernetes.io/name: sonarr
         app.kubernetes.io/instance: sonarr
-        app.kubernetes.io/component: service-metrics
 
     namespaceSelector:
       matchNames:
@@ -662,7 +658,17 @@ metrics:
           summary: "Sonarr memory utilization is high"
           description: "Sonarr memory working set is above 85% of memory limit for more than 10 minutes (value={{ $value }}%)."
       - alert: SonarrAuthorizationPolicyDenials
-        expr: sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center", destination_service_name="sonarr", request_protocol="http", response_code="403", response_flags="SEC"}[5m])) > 0
+        expr: |
+          sum(
+            rate(istio_requests_total{
+              destination_workload="sonarr",
+              destination_workload_namespace="media-center",
+              destination_service_name="sonarr",
+              request_protocol="http",
+              response_code="403",
+              response_flags="SEC"
+            }[5m])
+          ) > 0
         for: 2m
         labels:
           severity: warning
@@ -675,7 +681,16 @@ metrics:
       - alert: SonarrHighAuthorizationDenialRate
         expr: |
           (
-            sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center", destination_service_name="sonarr", request_protocol="http", response_code="403", response_flags="SEC"}[5m]))
+            sum(
+              rate(istio_requests_total{
+                destination_workload="sonarr",
+                destination_workload_namespace="media-center",
+                destination_service_name="sonarr",
+                request_protocol="http",
+                response_code="403",
+                response_flags="SEC"
+              }[5m])
+            )
             /
             sum(rate(istio_requests_total{destination_workload="sonarr", destination_workload_namespace="media-center", destination_service_name="sonarr", request_protocol="http"}[5m]))
           ) * 100 > 5
@@ -699,14 +714,9 @@ metrics:
           name: "application"
           allowCrossNamespaceImport: true
           file: "app.json"
-          # Optional: Override instanceSelector for this specific dashboard
-          # instanceSelector:
-          #   matchLabels:
-          #     dashboards: "specific-grafana"
-          # Optional: Folder assignment
-          # folder: "Application Dashboards"
-          # folderUID: "app-dashboards-uid"
-          # folderRef: "grafana-folder-resource"
+          instanceSelector:
+            matchLabels:
+              dashboards: "grafana"
 # ----------------------------------------------------------------------------
 # Service Account
 # ----------------------------------------------------------------------------
