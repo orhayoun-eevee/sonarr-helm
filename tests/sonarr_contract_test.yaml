@@ -22,6 +22,12 @@ tests:
         equal:
           path: kind
           value: ServiceMonitor
+      - documentSelector:
+          path: kind
+          value: DestinationRule
+        equal:
+          path: spec.host
+          value: sonarr-http
 
   - it: wires sonarr application container security and pvc correctly
     asserts:
