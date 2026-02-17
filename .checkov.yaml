@@ -1,0 +1,2 @@
+skip-check:
+  - CKV_K8S_40 # Sonarr requires fixed PUID/PGID for host volume compatibility.
