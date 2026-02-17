@@ -142,3 +142,17 @@ tests:
     asserts:
       - hasDocuments:
           count: 14
+
+  - it: applies explicit sonarr image override for controlled rollouts
+    set:
+      deployment:
+        containers:
+          sonarr:
+            image:
+              repository: registry.internal/sonarr
+              tag: ci-test
+    asserts:
+      - documentIndex: 1
+        equal:
+          path: spec.template.spec.containers[1].image
+          value: registry.internal/sonarr:ci-test
