@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.9
+    helm.sh/chart: sonarr-0.0.10
 spec:
   podSelector:
     matchLabels:
@@ -99,7 +99,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.9
+    helm.sh/chart: sonarr-0.0.10
   annotations:
     description: Sonarr media center service account
 automountServiceAccountToken: false
@@ -116,7 +116,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.9
+    helm.sh/chart: sonarr-0.0.10
   annotations:
     helm.sh/resource-policy: keep
 spec:
@@ -139,7 +139,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.9
+    helm.sh/chart: sonarr-0.0.10
   annotations:
     description: Sonarr media center HTTP service
 spec:
@@ -165,7 +165,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/version: 4.0.16.2944
-    helm.sh/chart: sonarr-0.0.9
+    helm.sh/chart: sonarr-0.0.10
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -183,7 +183,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: sonarr
         app.kubernetes.io/version: 4.0.16.2944
-        helm.sh/chart: sonarr-0.0.9
+        helm.sh/chart: sonarr-0.0.10
         app.kubernetes.io/part-of: media-center
         logging.kubernetes.io/component: media-center
         logging.kubernetes.io/service: sonarr
